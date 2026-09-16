@@ -53,26 +53,24 @@ export function App(): ReactElement {
             <SidebarExpand width={18} height={18} />
           </button>
         ) : null}
-        <div className="mx-auto flex min-h-0 w-full max-w-[740px] flex-1 flex-col px-6">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={entry.id}
-              className="flex min-h-0 flex-1 flex-col"
-              initial={false}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, filter: "blur(4px)" }}
-              transition={{ duration: 0.16, ease: EASE }}
-            >
-              <Chat entry={entry} onAsk={(text) => ask(entry, text)} />
-            </motion.div>
-          </AnimatePresence>
-          <div className="shrink-0 pt-3 pb-6">
-            <PromptBar
-              demo={false}
-              placeholder="Ask a research question…"
-              onSend={(text) => ask(entry, text)}
-            />
-          </div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={entry.id}
+            className="flex min-h-0 flex-1 flex-col"
+            initial={false}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(4px)" }}
+            transition={{ duration: 0.16, ease: EASE }}
+          >
+            <Chat entry={entry} onAsk={(text) => ask(entry, text)} />
+          </motion.div>
+        </AnimatePresence>
+        <div className="mx-auto w-full max-w-[740px] shrink-0 px-6 pt-3 pb-6">
+          <PromptBar
+            demo={false}
+            placeholder="Ask a research question…"
+            onSend={(text) => ask(entry, text)}
+          />
         </div>
       </main>
     </div>
