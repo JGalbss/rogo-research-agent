@@ -5,6 +5,11 @@ import { Context, Effect, Layer, MutableHashMap } from "effect";
 import type { Option } from "effect";
 import { AppConfig } from "./config.ts";
 
+export interface ActiveGeneration {
+  readonly readUrl: string;
+  readonly interrupt: Effect.Effect<void>;
+}
+
 export class DurableStreams extends Context.Service<
   DurableStreams,
   {
@@ -14,9 +19,9 @@ export class DurableStreams extends Context.Service<
       target: DurableStreamTarget,
       source: AsyncIterable<unknown>,
     ) => Effect.Effect<Response>;
-    readonly markActive: (chatId: string, readUrl: string) => void;
+    readonly markActive: (chatId: string, generation: ActiveGeneration) => void;
     readonly clearActive: (chatId: string) => void;
-    readonly activeStream: (chatId: string) => Option.Option<string>;
+    readonly active: (chatId: string) => Option.Option<ActiveGeneration>;
   }
 >()("DurableStreams") {}
 
@@ -35,7 +40,7 @@ export const DurableStreamsLive: Layer.Layer<DurableStreams, never, AppConfig> =
     );
     yield* Effect.logInfo("durable streams", { url });
 
-    const activeStreams = MutableHashMap.empty<string, string>();
+    const generations = MutableHashMap.empty<string, ActiveGeneration>();
 
     return {
       url,
@@ -45,13 +50,13 @@ export const DurableStreamsLive: Layer.Layer<DurableStreams, never, AppConfig> =
       },
       publish: (target, source) =>
         Effect.promise(() => toDurableStreamResponse({ source, stream: target })),
-      markActive: (chatId, readUrl) => {
-        MutableHashMap.set(activeStreams, chatId, readUrl);
+      markActive: (chatId, generation) => {
+        MutableHashMap.set(generations, chatId, generation);
       },
       clearActive: (chatId) => {
-        MutableHashMap.remove(activeStreams, chatId);
+        MutableHashMap.remove(generations, chatId);
       },
-      activeStream: (chatId) => MutableHashMap.get(activeStreams, chatId),
+      active: (chatId) => MutableHashMap.get(generations, chatId),
     };
   }),
 );

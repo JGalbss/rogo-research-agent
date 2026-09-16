@@ -1,6 +1,6 @@
 import express, { type Request as HttpRequest, type Response as HttpResponse } from "express";
 import { createUIMessageStream, generateId } from "ai";
-import { Data, Effect, Option, Schema, Stream } from "effect";
+import { Data, Effect, Fiber, Option, Schema, Stream } from "effect";
 import { ChatId, ChatMessage, type ResearchUIMessage } from "../shared/chat.ts";
 import { Researcher } from "./agent/research-agent.ts";
 import { ChatIndex } from "./chat-index.ts";
@@ -28,7 +28,9 @@ const turn = (
     const store = yield* ChatStore;
     const index = yield* ChatIndex;
     const streams = yield* DurableStreams;
-    const run = Effect.runPromiseWith(yield* Effect.context());
+    const context = yield* Effect.context();
+    const run = Effect.runPromiseWith(context);
+    const fork = Effect.runForkWith(context);
 
     const messages: ResearchUIMessage[] = Array.from(request.messages);
     const chat = yield* store.get(request.id).pipe(
@@ -44,12 +46,15 @@ const turn = (
 
     const source = createUIMessageStream<ResearchUIMessage>({
       originalMessages: messages,
-      execute: ({ writer }) =>
-        run(
+      execute: ({ writer }) => {
+        const generation = fork(
           Stream.runForEach(researcher.answer(messages), (chunk) =>
             Effect.sync(() => writer.write(chunk)),
           ),
-        ),
+        );
+        streams.markActive(request.id, { readUrl, interrupt: Fiber.interrupt(generation) });
+        return run(Fiber.join(generation));
+      },
       onFinish: ({ messages: final }) =>
         run(
           Effect.gen(function* () {
@@ -61,7 +66,6 @@ const turn = (
       onError: (error) => String(error),
     });
 
-    streams.markActive(request.id, readUrl);
     yield* index.emit({ _tag: "GenerationStarted", chatId: request.id, streamId, readUrl });
     yield* Effect.logInfo("chat", { chatId: request.id, messages: messages.length, streamId });
 
@@ -108,6 +112,20 @@ app.post("/api/chat", (req: HttpRequest, res: HttpResponse) => {
   );
 });
 
+app.post("/api/chat/:id/stop", (req: HttpRequest, res: HttpResponse) => {
+  respond(
+    res,
+    Effect.gen(function* () {
+      const streams = yield* DurableStreams;
+      yield* Option.match(streams.active(String(req.params.id)), {
+        onNone: () => Effect.sync(() => res.sendStatus(204)),
+        onSome: (generation) =>
+          generation.interrupt.pipe(Effect.map(() => res.sendStatus(202))),
+      });
+    }),
+  );
+});
+
 app.get("/api/chats", (_req: HttpRequest, res: HttpResponse) => {
   respond(
     res,
@@ -142,9 +160,9 @@ app.get("/api/chat/:id/stream", (req: HttpRequest, res: HttpResponse) => {
     res,
     Effect.gen(function* () {
       const streams = yield* DurableStreams;
-      Option.match(streams.activeStream(String(req.params.id)), {
+      Option.match(streams.active(String(req.params.id)), {
         onNone: () => res.sendStatus(204),
-        onSome: (streamUrl) => res.status(200).location(streamUrl).json({ streamUrl }),
+        onSome: ({ readUrl }) => res.status(200).location(readUrl).json({ streamUrl: readUrl }),
       });
     }),
   );
