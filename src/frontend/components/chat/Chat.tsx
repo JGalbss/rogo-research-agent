@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { Option } from "effect";
 import { AnimatePresence, motion } from "motion/react";
-import type { ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import LoadingState from "@/frontend/components/primitives/LoadingState";
 import PromptBar from "@/frontend/components/primitives/PromptBar";
 import { chatFor } from "@/frontend/store/chat";
@@ -17,10 +17,9 @@ const shown = { opacity: 1, y: 0 };
 const leave = { opacity: 0 };
 
 export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
-  const { messages, sendMessage, status, error } = useChat({
-    chat: chatFor(entry),
-    resume: Option.isSome(entry.generation),
-  });
+  const chat = chatFor(entry);
+  const [resume] = useState(() => Option.isSome(entry.generation) && chat.status === "ready");
+  const { messages, sendMessage, status, error } = useChat({ chat, resume });
   const view = classifyChatView({ status, messageCount: messages.length, error });
   const settled = acceptsInput(view);
 
