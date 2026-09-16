@@ -8,6 +8,7 @@ export type TraceRow = {
   primary: string;
   secondary?: string;
   streaming?: boolean;
+  complete?: boolean;
 };
 
 const TOOL_LABELS = HashMap.make(
@@ -41,6 +42,7 @@ export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
         {
           key: tool.toolCallId,
           kind: "action",
+          complete: tool.state === "output-available" || tool.state === "output-error",
           primary: Option.getOrElse(HashMap.get(TOOL_LABELS, getToolName(tool)), () => getToolName(tool)),
           secondary: Match.value(tool).pipe(
             Match.when({ state: "output-error" }, ({ errorText }) => `failed: ${errorText ?? "unknown"}`),
@@ -60,7 +62,12 @@ export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
 export const traceHeadline = (rows: ReadonlyArray<TraceRow>): string =>
   Option.match(Arr.last(rows), {
     onNone: () => "Thinking",
-    onSome: (row) => (row.secondary ? `${row.primary} · ${row.secondary}` : row.primary),
+    onSome: (row) =>
+      Match.value(row).pipe(
+        Match.when({ kind: "action", complete: true }, () => "Thinking"),
+        Match.when({ secondary: Match.nonEmptyString }, ({ primary, secondary }) => `${primary} · ${secondary}`),
+        Match.orElse(({ primary }) => primary),
+      ),
   });
 
 export const traceSubjects = (rows: ReadonlyArray<TraceRow>): string[] =>
