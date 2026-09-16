@@ -6,6 +6,12 @@ export const promptCache = {
   anthropic: { cacheControl: { type: "ephemeral" } } satisfies AnthropicProviderOptions,
 };
 
+export const visibleReasoning = {
+  anthropic: {
+    thinking: { type: "adaptive", display: "summarized" },
+  } satisfies AnthropicProviderOptions,
+};
+
 const coverageUniverse = companies
   .map(
     (company) =>

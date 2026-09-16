@@ -18,6 +18,14 @@ export const answerTokens = (text: string): StreamingToken[] =>
     Arr.map((word) => ({ text: word })),
   );
 
+export const reasoningRows = (message: ResearchUIMessage): TraceRow[] =>
+  pipe(
+    message.parts,
+    Arr.flatMap((part) => (part.type === "reasoning" ? part.text.split(/\n\s*\n/) : [])),
+    Arr.map(Str.trim),
+    Arr.filter(Str.isNonEmpty),
+    Arr.map((primary) => ({ primary })),
+  );
 
 export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
   pipe(

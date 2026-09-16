@@ -7,7 +7,7 @@ import type { ResearchUIMessage } from "../../shared/chat.ts";
 import { AppConfig } from "../config.ts";
 import { BaseAgent } from "./base-agent.ts";
 import { logAgentEvent } from "./events.ts";
-import { promptCache, researchInstructions } from "./prompts/research.ts";
+import { promptCache, researchInstructions, visibleReasoning } from "./prompts/research.ts";
 import { researchTools } from "./tools/index.ts";
 
 export class ResearchError extends Data.TaggedError("ResearchError")<{
@@ -37,7 +37,9 @@ export const ResearcherLive: Layer.Layer<Researcher, never, AppConfig> = Layer.e
         tools: researchTools,
         stopWhen: stepCountIs(config.maxSteps),
         maxOutputTokens: config.maxOutputTokens,
-        providerOptions: promptCache,
+        providerOptions: {
+          anthropic: { ...promptCache.anthropic, ...visibleReasoning.anthropic },
+        },
       }),
     );
 
