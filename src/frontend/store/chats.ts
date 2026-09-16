@@ -73,9 +73,16 @@ export const deriveChats = (source: {
       ),
       Match.tag("MessageAppended", ({ chatId, message }) =>
         upsert(chats, chatId, (chat) => {
-          const messages = Arr.append(
-            Arr.filter(chat.messages, (existing) => existing.id !== message.id),
-            message,
+          const messages = Option.match(
+            Arr.findFirstIndex(chat.messages, (existing) => existing.id === message.id),
+            {
+              onNone: () => Arr.append(chat.messages, message),
+              onSome: () =>
+                Arr.map(chat.messages, (existing) => {
+                  if (existing.id === message.id) return message;
+                  return existing;
+                }),
+            },
           );
           return { ...chat, messages, title: chatTitle(messages) };
         }),
