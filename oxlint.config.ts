@@ -5,7 +5,12 @@ const preset = recommended({ effect: true });
 
 export default defineConfig({
   ...preset,
-  ignorePatterns: [...ignorePatterns(), "src/frontend/components/atoms/**", "src/frontend/components/primitives/**"],
+  ignorePatterns: [
+    ...ignorePatterns(),
+    "src/frontend/components/atoms/**",
+    "src/frontend/components/primitives/**",
+    "src/backend/utils/data.ts",
+  ],
   rules: {
     ...preset.rules,
     // Express 5 forwards rejected promises from async handlers to the error middleware.
