@@ -2,7 +2,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { ToolLoopAgent, convertToModelMessages, stepCountIs } from "ai";
 import type { InferUIMessageChunk } from "ai";
 import { Context, Data, Effect, Layer, Queue, Redacted, Stream } from "effect";
-import type { AgentEvent } from "../../shared/agent-event.ts";
+import { AgentEvent } from "../../shared/agent-event.ts";
 import type { ResearchUIMessage } from "../../shared/chat.ts";
 import { AppConfig } from "../config.ts";
 import { BaseAgent } from "./base-agent.ts";
@@ -30,6 +30,23 @@ export class Researcher extends Context.Service<
 const logPlan = StepPlan.$match({
   Research: () => Effect.void,
   Answer: ({ reason }) => Effect.logInfo("answering now", { reason }),
+});
+
+const progressChunk = (event: AgentEvent): ResearchChunk => ({
+  type: "data-agent-event",
+  data: event,
+});
+
+const chunksFor: (event: AgentEvent) => ReadonlyArray<ResearchChunk> = AgentEvent.$match({
+  Iteration: (event) => [progressChunk(event)],
+  ToolStart: (event) => [progressChunk(event)],
+  ToolEnd: (event) => [progressChunk(event)],
+  ToolFailed: (event) => [progressChunk(event)],
+  Caveat: (event) => [progressChunk(event)],
+  Source: ({ id, title }): ReadonlyArray<ResearchChunk> => [
+    { type: "source-document", sourceId: id, mediaType: "text/plain", title },
+  ],
+  Usage: () => [],
 });
 
 export const ResearcherLive: Layer.Layer<Researcher, never, AppConfig> = Layer.effect(
@@ -60,7 +77,11 @@ export const ResearcherLive: Layer.Layer<Researcher, never, AppConfig> = Layer.e
               prepareStep: answerWithinBudget(budget, (plan) => Queue.offerUnsafe(plans, plan)),
               maxOutputTokens: config.maxOutputTokens,
               providerOptions: {
-                anthropic: { ...promptCache.anthropic, ...visibleReasoning.anthropic },
+                anthropic: {
+                  ...promptCache.anthropic,
+                  ...visibleReasoning.anthropic,
+                  effort: config.effort,
+                },
               },
             }),
           );
@@ -83,7 +104,7 @@ export const ResearcherLive: Layer.Layer<Researcher, never, AppConfig> = Layer.e
           );
           const progress = Stream.fromQueue(events).pipe(
             Stream.tap(logAgentEvent),
-            Stream.map((event): ResearchChunk => ({ type: "data-agent-event", data: event })),
+            Stream.flatMap((event) => Stream.fromIterable(chunksFor(event))),
           );
           const planning = Stream.fromQueue(plans).pipe(Stream.tap(logPlan), Stream.drain);
 
