@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@oxlint/plugins": "1.83.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/express": "^5.0.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
@@ -28,6 +29,7 @@
     "concurrently": "^10.0.5",
     "oxlint": "1.83.0",
     "react-doctor": "0.9.14",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
