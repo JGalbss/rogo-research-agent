@@ -4,25 +4,15 @@ import { type ReactElement, useState } from "react";
 import { Chat } from "@/frontend/components/chat/Chat";
 import PromptBar from "@/frontend/components/primitives/PromptBar";
 import SidebarNav from "@/frontend/components/primitives/SidebarNav";
-import { chatFor } from "@/frontend/store/chat";
-import { type ChatEntry, emptyEntry, useChats } from "@/frontend/store/chats";
-import { parseQuestion } from "@/frontend/store/question";
-import { useChatRoute } from "@/frontend/hooks/use-chat-route";
-import { selectChat, startNewChat, useSelectedChat } from "@/frontend/store/selection";
-
-const ask = (entry: ChatEntry, text: string): void => {
-  const chat = chatFor(entry);
-  if (chat.status === "submitted" || chat.status === "streaming") return;
-  Option.map(parseQuestion(text), (question) => {
-    void chat.sendMessage({ text: question });
-  });
-};
+import { useSelectedChat } from "@/frontend/hooks/use-selected-chat";
+import { askChat } from "@/frontend/store/chat";
+import { emptyEntry, useChats } from "@/frontend/store/chats";
 
 export function App(): ReactElement {
   const chats = useChats();
-  const selected = useSelectedChat();
-  useChatRoute(selected);
+  const { selected, select, startNew } = useSelectedChat();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const entry = Option.getOrElse(
     Arr.findFirst(chats, (chat) => chat.id === selected),
     () => emptyEntry(selected),
@@ -36,8 +26,8 @@ export function App(): ReactElement {
         recents={recents}
         activeTitle={entry.title}
         activeId={entry.id}
-        onNewChat={startNewChat}
-        onPick={selectChat}
+        onNewChat={startNew}
+        onPick={select}
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
@@ -52,7 +42,7 @@ export function App(): ReactElement {
             <SidebarExpand width={18} height={18} />
           </button>
         ) : null}
-        <Chat key={entry.id} entry={entry} onAsk={(text) => ask(entry, text)} />
+        <Chat key={entry.id} entry={entry} onAsk={(text) => askChat(entry, text)} />
         <div className="relative mx-auto w-full max-w-[740px] shrink-0 px-6 pt-3 pb-6">
           <div
             aria-hidden
@@ -62,7 +52,7 @@ export function App(): ReactElement {
           <PromptBar
             demo={false}
             placeholder="Ask a research question…"
-            onSend={(text) => ask(entry, text)}
+            onSend={(text) => askChat(entry, text)}
           />
         </div>
       </main>
