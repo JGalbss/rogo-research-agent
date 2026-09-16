@@ -1,5 +1,6 @@
 import { Array as Arr, Data, Match, String as Str } from "effect";
 import type { ReactElement } from "react";
+import LoadingState from "@/frontend/components/primitives/LoadingState";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import type { ResearchUIMessage } from "@/shared/chat";
 import { answerText, isStreaming, traceRows } from "./message-parts.ts";
@@ -37,7 +38,7 @@ export function AssistantReply({
     Match.orElse(() => Reply.Pending()),
   );
   const trace = Arr.match(traceRows(message), {
-    onEmpty: () => null,
+    onEmpty: () => (working ? <LoadingState label="Thinking" /> : null),
     onNonEmpty: (rows) => {
       const sources = rows.filter((row) => row.kind === "action").length;
       return (

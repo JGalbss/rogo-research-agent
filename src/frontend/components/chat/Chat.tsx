@@ -30,13 +30,16 @@ export function Chat({
   });
   const settled = acceptsInput(view);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const settledOnce = useRef(false);
+  const [openedWith] = useState(() => messages.length);
+  const followed = useRef(false);
 
   useEffect(() => {
     const node = scrollRef.current;
     if (node === null) return;
-    node.scrollTo({ top: node.scrollHeight, behavior: settledOnce.current ? "smooth" : "instant" });
-    settledOnce.current = true;
+    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
+    if (followed.current && distance > 120) return;
+    node.scrollTop = node.scrollHeight;
+    followed.current = true;
   }, [messages, status]);
 
   const awaitingReply = Option.exists(Arr.last(messages), (message) => message.role === "user");
@@ -77,19 +80,13 @@ export function Chat({
       <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 px-6 pt-10 pb-4">
         <AnimatePresence initial={false}>
           {messages.map((message, index) => (
-            <AnimatedMessage key={message.id} index={index}>
+            <AnimatedMessage key={message.id} index={index} waterfall={index < openedWith}>
               <MessageBubble message={message} settled={settled} />
             </AnimatedMessage>
           ))}
-          <motion.div
-            key={view._tag}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: EASE }}
-          >
+          <div key="status" className="min-h-8">
             {statusSlot}
-          </motion.div>
+          </div>
         </AnimatePresence>
       </div>
     </div>
