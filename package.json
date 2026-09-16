@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.54",
+    "@ai-sdk/react": "^4.0.105",
     "@anthropic-ai/sdk": "^0.124.0",
     "ai": "^7.0.102",
     "class-variance-authority": "^0.7.1",
@@ -25,6 +26,7 @@
     "liveline": "^0.0.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "streamdown": "^2.6.0",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5"
   },
