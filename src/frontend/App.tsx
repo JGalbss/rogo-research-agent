@@ -58,10 +58,10 @@ export function App(): ReactElement {
             <motion.div
               key={entry.id}
               className="flex min-h-0 flex-1 flex-col"
-              initial={{ opacity: 0, filter: "blur(6px)" }}
+              initial={false}
               animate={{ opacity: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, filter: "blur(6px)" }}
-              transition={{ duration: 0.22, ease: EASE }}
+              exit={{ opacity: 0, filter: "blur(4px)" }}
+              transition={{ duration: 0.16, ease: EASE }}
             >
               <Chat entry={entry} onAsk={(text) => ask(entry, text)} />
             </motion.div>

@@ -52,10 +52,10 @@ export function Chat({
           <motion.div
             key="greeting"
             className="absolute inset-0 flex flex-col items-center justify-center gap-6 pb-24 text-center"
-            initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+            initial={false}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -8, filter: "blur(6px)" }}
-            transition={{ duration: 0.28, ease: EASE }}
+            transition={{ duration: 0.22, ease: EASE }}
           >
             <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">
               What are we researching?
