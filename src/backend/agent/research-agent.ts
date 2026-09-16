@@ -1,6 +1,6 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { ToolLoopAgent, stepCountIs } from "ai";
-import { Option, Redacted } from "effect";
+import { ToolLoopAgent, stepCountIs, type ModelMessage } from "ai";
+import { Redacted } from "effect";
 import { config } from "../config.ts";
 import { companies } from "../utils/data.ts";
 import { BaseAgent } from "./base-agent.ts";
@@ -24,14 +24,6 @@ Our coverage universe:
 ${coverageUniverse}
 `;
 
-const OUT_OF_STEPS_ANSWER =
-  "I looked at a number of sources but ran out of research steps before I could pull the answer together. Try asking a narrower question.";
-
-export interface AgentResult {
-  readonly answer: string;
-  readonly iterations: number;
-}
-
 const researcher = new BaseAgent(
   new ToolLoopAgent({
     model: anthropic(config.model),
@@ -42,14 +34,7 @@ const researcher = new BaseAgent(
   }),
 );
 
-export const answerQuestion = async (
-  question: string,
+export const streamAnswer = (
+  messages: ModelMessage[],
   onEvent: (event: AgentEvent) => void,
-): Promise<AgentResult> => {
-  const research = await researcher.ask(question, onEvent);
-
-  return {
-    answer: Option.getOrElse(research.answer, () => OUT_OF_STEPS_ANSWER),
-    iterations: research.steps,
-  };
-};
+): ReturnType<typeof researcher.stream> => researcher.stream(messages, onEvent);

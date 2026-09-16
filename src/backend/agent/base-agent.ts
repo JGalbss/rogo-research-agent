@@ -1,11 +1,5 @@
-import type { ToolLoopAgent, ToolSet } from "ai";
-import { Option } from "effect";
+import type { ModelMessage, ToolLoopAgent, ToolSet } from "ai";
 import { AgentEvent } from "./events.ts";
-
-export interface ToolLoopOutcome {
-  readonly answer: Option.Option<string>;
-  readonly steps: number;
-}
 
 export class BaseAgent<TOOLS extends ToolSet> {
   readonly #loop: ToolLoopAgent<never, TOOLS>;
@@ -14,27 +8,34 @@ export class BaseAgent<TOOLS extends ToolSet> {
     this.#loop = loop;
   }
 
-  async ask(question: string, onEvent: (event: AgentEvent) => void): Promise<ToolLoopOutcome> {
-    const result = await this.#loop.generate({
-      prompt: question,
-      onStepStart: ({ stepNumber }) => onEvent(AgentEvent.Iteration({ n: stepNumber + 1 })),
+  stream(
+    messages: ModelMessage[],
+    onEvent: (event: AgentEvent) => void,
+  ): ReturnType<ToolLoopAgent<never, TOOLS>["stream"]> {
+    return this.#loop.stream({
+      messages,
+      onStepStart: ({ stepNumber }) =>
+        onEvent(AgentEvent.Iteration({ n: stepNumber + 1 })),
       onToolExecutionStart: ({ toolCall }) =>
         onEvent(
-          AgentEvent.ToolStart({ name: toolCall.toolName, input: JSON.stringify(toolCall.input) }),
+          AgentEvent.ToolStart({
+            name: toolCall.toolName,
+            input: JSON.stringify(toolCall.input),
+          }),
         ),
       onToolExecutionEnd: ({ toolCall, toolOutput, toolExecutionMs }) => {
         if (toolOutput.type === "tool-error") {
           onEvent(
-            AgentEvent.ToolFailed({ name: toolCall.toolName, message: String(toolOutput.error) }),
+            AgentEvent.ToolFailed({
+              name: toolCall.toolName,
+              message: String(toolOutput.error),
+            }),
           );
         }
-        onEvent(AgentEvent.ToolEnd({ name: toolCall.toolName, ms: toolExecutionMs }));
+        onEvent(
+          AgentEvent.ToolEnd({ name: toolCall.toolName, ms: toolExecutionMs }),
+        );
       },
     });
-
-    return {
-      answer: Option.liftPredicate(result.text, () => result.toolCalls.length === 0),
-      steps: result.steps.length,
-    };
   }
 }

@@ -1,7 +1,14 @@
-import express from "express";
+import express, { type Request, type Response } from "express";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  pipeUIMessageStreamToResponse,
+  validateUIMessages,
+} from "ai";
 import { Effect } from "effect";
+import type { ResearchUIMessage } from "../shared/chat.ts";
 import { AgentEvent } from "./agent/events.ts";
-import { answerQuestion } from "./agent/research-agent.ts";
+import { streamAnswer } from "./agent/research-agent.ts";
 import { config } from "./config.ts";
 import { runtime } from "./utils/runtime.ts";
 
@@ -15,17 +22,26 @@ const logEvent = AgentEvent.$match({
   ToolFailed: ({ name, message }) => Effect.logWarning("tool failed", { name, message }),
 });
 
-app.post("/api/chat", async (req, res) => {
-  const message = String(req.body.message ?? "");
-  runtime.runSync(Effect.logInfo("chat", { message }));
+app.post("/api/chat", async (req: Request, res: Response) => {
+  const messages = await validateUIMessages<ResearchUIMessage>({ messages: req.body.messages });
+  runtime.runSync(Effect.logInfo("chat", { messages: messages.length }));
 
-  try {
-    const result = await answerQuestion(message, (event) => runtime.runSync(logEvent(event)));
-    res.json({ answer: result.answer });
-  } catch (err) {
-    runtime.runSync(Effect.logError("chat failed", err));
-    res.status(500).json({ error: String(err) });
-  }
+  const stream = createUIMessageStream<ResearchUIMessage>({
+    originalMessages: messages,
+    execute: async ({ writer }) => {
+      const result = await streamAnswer(await convertToModelMessages(messages), (event) => {
+        runtime.runSync(logEvent(event));
+        writer.write({ type: "data-agent-event", data: event });
+      });
+      writer.merge(result.toUIMessageStream());
+    },
+    onError: (error) => {
+      runtime.runSync(Effect.logError("chat failed", error));
+      return String(error);
+    },
+  });
+
+  await pipeUIMessageStreamToResponse({ response: res, stream });
 });
 
 app.listen(config.port, () => {
