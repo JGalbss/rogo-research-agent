@@ -11,6 +11,9 @@ export type TraceRow = { primary: string; secondary?: string; mono?: boolean };
 export const answerText = (message: ResearchUIMessage): string =>
   pipe(message.parts, Arr.flatMap((part) => (part.type === "text" ? [part.text] : [])), Arr.join("\n\n"));
 
+export const isStreaming = (message: ResearchUIMessage): boolean =>
+  Arr.some(message.parts, (part) => part.type === "text" && part.state === "streaming");
+
 export const answerTokens = (text: string): StreamingToken[] =>
   pipe(
     text.split(/\s+/),

@@ -31,7 +31,12 @@ export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
   };
 
   const viewSlot = ChatView.$match(view, {
-    Empty: () => <ExamplePrompts onPick={send} />,
+    Empty: () => (
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 pb-24 text-center">
+        <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">What are we researching?</h1>
+        <ExamplePrompts onPick={send} />
+      </div>
+    ),
     Idle: () => null,
     Streaming: () => null,
     Submitted: () => <LoadingState label="Researching" />,
@@ -42,7 +47,7 @@ export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-3">
+      <div className="flex flex-1 flex-col gap-6 pt-10">
         <AnimatePresence initial={false}>
           {messages.map((message) => (
             <motion.div
@@ -58,6 +63,7 @@ export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
           ))}
           <motion.div
             key={view._tag}
+            className="flex flex-1 flex-col"
             initial={enter}
             animate={shown}
             exit={leave}
@@ -67,7 +73,7 @@ export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="sticky bottom-0 bg-page pt-2">
+      <div className="sticky bottom-0 bg-page pt-3 pb-6">
         <PromptBar demo={false} placeholder="Ask a research question…" onSend={send} />
       </div>
     </>

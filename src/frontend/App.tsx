@@ -17,7 +17,7 @@ export function App(): ReactElement {
   const recents = chats.map((chat) => ({ id: chat.id, label: chat.title }));
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-page">
       <SidebarNav
         fill
         recents={recents}
@@ -26,18 +26,12 @@ export function App(): ReactElement {
         onNewChat={() => setSelected(generateId())}
         onPick={(id) => setSelected(id)}
       />
-      <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-5 px-5 pt-8 pb-6">
-        <header>
-          <h1 className="text-[20px] font-semibold text-ink">Rogo Research</h1>
-          <p className="text-[14px] text-ink-2">
-            Ask a question about a company in our coverage universe.
-          </p>
-        </header>
+      <main className="mx-auto flex min-h-screen w-full max-w-[740px] flex-col px-6">
 
         <AnimatePresence mode="wait">
           <motion.div
             key={entry.id}
-            className="flex flex-1 flex-col"
+            className="flex min-h-0 flex-1 flex-col"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

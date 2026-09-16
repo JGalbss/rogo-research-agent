@@ -10,9 +10,9 @@ const EXAMPLES = [
 
 export function ExamplePrompts({ onPick }: { onPick: (text: string) => void }): ReactElement {
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex max-w-[560px] flex-wrap justify-center gap-2">
       {EXAMPLES.map((example) => (
-        <Button key={example} size="sm" onClick={() => onPick(example)}>
+        <Button key={example} size="sm" variant="secondary" onClick={() => onPick(example)}>
           {example}
         </Button>
       ))}

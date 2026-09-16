@@ -97,9 +97,8 @@ const COMMANDS = [
 ];
 
 const MODELS = [
-  { key: "sprinkles-5", name: "Sprinkles 5", tag: "Flagship" },
-  { key: "vanilla-1", name: "Vanilla 1", tag: "Basic" },
-  { key: "freezer-burn", name: "Freezer Burn 0.4", tag: "Stale" },
+  { key: "claude-sonnet-5", name: "Claude Sonnet 5", tag: "Default" },
+  { key: "claude-opus-5", name: "Claude Opus 5", tag: "Deep" },
 ];
 
 const FILES = ["flavor-chart.png", "summer-menu.pdf", "pos-export.csv"];
@@ -163,7 +162,7 @@ export default function PromptBar({
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
-  const [model, setModel] = useState(MODELS[1]);
+  const [model, setModel] = useState(MODELS[0]);
   const [attachments, setAttachments] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [active, setActive] = useState(0);

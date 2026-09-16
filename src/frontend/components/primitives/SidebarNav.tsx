@@ -12,11 +12,10 @@ import GlideMenu from "@/frontend/components/primitives/GlideMenu";
  * chat history, and a collapse that preserves icon alignment.
  * ───────────────────────────────────────────────────────── */
 
-const WORKSPACE = { key: "creamery", name: "Creamery Ops", monogram: "C" };
+const WORKSPACE = { key: "rogo", name: "Rogo Research", monogram: "R" };
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { key: string; label: string; icon: ReactNode; count?: string }[] = [
   { key: "home", label: "Home", icon: <Home width={18} height={18} /> },
-  { key: "invite", label: "Invite users", icon: <UserPlus width={18} height={18} />, count: "3/10" },
 ];
 
 export type SidebarRecent = {
