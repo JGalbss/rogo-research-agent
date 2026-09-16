@@ -2,7 +2,7 @@ import { useChat } from "@ai-sdk/react";
 import { Array as Arr, Option } from "effect";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactElement, useEffect, useRef, useState } from "react";
-import LoadingState from "@/frontend/components/primitives/LoadingState";
+import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import { chatFor } from "@/frontend/store/chat";
 import type { ChatEntry } from "@/frontend/store/chats";
 import { AnimatedMessage } from "./AnimatedMessage.tsx";
@@ -47,8 +47,8 @@ export function Chat({
     Empty: () => null,
     Loading: () => null,
     Idle: () => null,
-    Streaming: () => (awaitingReply ? <LoadingState label="Researching" /> : null),
-    Submitted: () => <LoadingState label="Researching" />,
+    Streaming: () => (awaitingReply ? <ThinkingState variant="Coding" rows={[]} active="Thinking" working /> : null),
+    Submitted: () => <ThinkingState variant="Coding" rows={[]} active="Thinking" working />,
     Failed: ({ message }) => (
       <p className="text-[13px] text-red">Something went wrong: {message}</p>
     ),

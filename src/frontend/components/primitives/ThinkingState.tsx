@@ -130,7 +130,7 @@ export default function ThinkingState({
     done: done ?? base.done,
   };
   const driven = workingProp !== undefined;
-  const autoExpanded = driven ? workingProp : stage >= 1 && stage < 4;
+  const autoExpanded = driven ? workingProp && v.rows.length > 0 : stage >= 1 && stage < 4;
   const expanded = manualExpanded ?? autoExpanded;
   const working = driven ? workingProp : stage < 3;
   const visible = driven || stage >= 3 ? v.rows.length : stage < 2 ? 0 : Math.min(2, v.rows.length);
