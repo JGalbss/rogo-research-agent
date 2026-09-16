@@ -20,9 +20,9 @@ export function AnimatedMessage({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.55, ease: EASE, delay }}
     >
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       <motion.div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-2xl"
+        className="absolute inset-0"
         style={{
           background:
             "linear-gradient(115deg, transparent 30%, var(--accent-tint) 50%, transparent 70%)",
@@ -31,6 +31,7 @@ export function AnimatedMessage({
         animate={{ opacity: 0, x: "60%" }}
         transition={{ duration: 0.9, ease: EASE, delay }}
       />
+      </div>
       {children}
     </motion.div>
   );

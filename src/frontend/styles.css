@@ -3,6 +3,11 @@
 @import "./beautifui/sidebar-nav.css";
 @source "../../node_modules/streamdown/dist/*.js";
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--page);
   background-image: none;

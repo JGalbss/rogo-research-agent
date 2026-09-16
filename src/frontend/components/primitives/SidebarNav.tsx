@@ -48,11 +48,14 @@ type SidebarNavProps = {
   onFooterClick?: () => void;
   recents?: SidebarRecent[];
   variant?: string;
+  /** controlled collapse; when omitted the sidebar owns the state */
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 };
 
 const SIDEBAR_MOTION = {
   expandedWidth: 224,
-  collapsedWidth: 52,
+  collapsedWidth: 0,
   duration: 280,
   copyDuration: 180,
   copyOffset: 8,
@@ -197,8 +200,15 @@ export default function SidebarNav({
   footerIcon,
   onFooterClick,
   recents = DEFAULT_RECENTS,
+  collapsed: collapsedProp,
+  onCollapsedChange,
 }: SidebarNavProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const collapsed = collapsedProp ?? internalCollapsed;
+  const setCollapsed = (next: boolean) => {
+    setInternalCollapsed(next);
+    onCollapsedChange?.(next);
+  };
   const [internalNav, setInternalNav] = useState("chats");
   const currentNav = activeNav ?? internalNav;
   const selectNav = (key: string) => {
