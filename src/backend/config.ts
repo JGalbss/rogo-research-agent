@@ -12,6 +12,7 @@ const settings = Config.all({
   abortAfterMs: Config.Int("ABORT_AFTER_MS").pipe(Config.withDefault(90_000)),
   port: Config.Port("PORT").pipe(Config.withDefault(8787)),
   durableStreamsPort: Config.Port("DURABLE_STREAMS_PORT").pipe(Config.withDefault(4437)),
+  durableStreamsDir: Config.String("DURABLE_STREAMS_DIR").pipe(Config.withDefault(".data/streams")),
 });
 
 export class AppConfig extends Context.Service<AppConfig, Effect.Success<typeof settings>>()(

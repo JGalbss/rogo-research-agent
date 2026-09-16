@@ -32,6 +32,7 @@ export const DurableStreamsLive: Layer.Layer<DurableStreams, never, AppConfig> =
     const server = new DurableStreamTestServer({
       port: config.durableStreamsPort,
       host: "127.0.0.1",
+      dataDir: config.durableStreamsDir,
     });
 
     const url = yield* Effect.acquireRelease(
