@@ -26,6 +26,8 @@ function useSequence(steps: number[], settled: boolean) {
 }
 
 type Row = {
+  /** thought rows read as prose; action rows read as a labeled step */
+  kind?: "thought" | "action";
   primary: string;
   secondary?: string;
   mono?: boolean;
@@ -98,11 +100,14 @@ export default function ThinkingState({
   done,
   icon,
   settled = false,
+  working: workingProp,
 }: {
   variant?: string;
   onSettled?: () => void;
   /** mount already collapsed and complete (for restored transcripts) */
   settled?: boolean;
+  /** drive the open/working state from real progress instead of the demo timer */
+  working?: boolean;
   /** override the built-in trace content (keeps the primitive reusable) */
   rows?: Row[];
   active?: string;
@@ -120,10 +125,11 @@ export default function ThinkingState({
     active: active ?? base.active,
     done: done ?? base.done,
   };
-  const autoExpanded = stage >= 1 && stage < 4;
+  const driven = workingProp !== undefined;
+  const autoExpanded = driven ? workingProp : stage >= 1 && stage < 4;
   const expanded = manualExpanded ?? autoExpanded;
-  const working = stage < 3;
-  const visible = stage < 2 ? 0 : stage === 2 ? Math.min(2, v.rows.length) : v.rows.length;
+  const working = driven ? workingProp : stage < 3;
+  const visible = driven || stage >= 3 ? v.rows.length : stage < 2 ? 0 : Math.min(2, v.rows.length);
   const traceRef = useRef<HTMLDivElement>(null);
   const [lineHeight, setLineHeight] = useState(0);
   useLayoutEffect(() => {
@@ -234,7 +240,7 @@ export default function ThinkingState({
                     <span className="size-3 shrink-0 rounded-full border-[1.5px] border-line-strong border-t-ink-2" style={{ animation: "spin 700ms linear infinite" }} />
                   )
                 )}
-                <span className={`min-w-0 truncate text-[12.5px] ${variant === "Reasoning" ? "whitespace-normal leading-relaxed text-ink-2" : "font-medium text-ink"} ${variant === "Search" ? "animated-underline" : ""}`}>
+                <span className={`min-w-0 truncate text-[12.5px] ${row.kind === "thought" || (row.kind === undefined && variant === "Reasoning") ? "whitespace-normal leading-relaxed text-ink-2" : "font-medium text-ink"} ${variant === "Search" ? "animated-underline" : ""}`}>
                   {row.primary}
                 </span>
                 {row.secondary && (

@@ -2,7 +2,7 @@ import { Array as Arr, Data, Match, String as Str } from "effect";
 import type { ReactElement } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import type { ResearchUIMessage } from "@/shared/chat";
-import { answerText, isStreaming, reasoningRows, traceRows } from "./message-parts.ts";
+import { answerText, isStreaming, traceRows } from "./message-parts.ts";
 import { Prose } from "./Prose.tsx";
 
 const OUT_OF_STEPS_ANSWER =
@@ -29,39 +29,32 @@ export function AssistantReply({
   message: ResearchUIMessage;
   settled: boolean;
 }): ReactElement {
-  const reply = Match.value({ settled, text: answerText(message), streaming: isStreaming(message) }).pipe(
-    Match.when({ text: Str.isNonEmpty }, ({ text, streaming }) => Reply.Answer({ text, streaming })),
+  const text = answerText(message);
+  const working = !settled && text.length === 0;
+  const reply = Match.value({ settled, text, streaming: isStreaming(message) }).pipe(
+    Match.when({ text: Str.isNonEmpty }, ({ text: answer, streaming }) => Reply.Answer({ text: answer, streaming })),
     Match.when({ settled: true }, () => Reply.OutOfSteps()),
     Match.orElse(() => Reply.Pending()),
   );
-  const reasoning = Arr.match(reasoningRows(message), {
-    onEmpty: () => null,
-    onNonEmpty: (rows) => (
-      <ThinkingState
-        variant="Reasoning"
-        rows={Array.from(rows)}
-        active="Thinking"
-        done="Thought it through"
-        settled={settled}
-      />
-    ),
-  });
   const trace = Arr.match(traceRows(message), {
     onEmpty: () => null,
-    onNonEmpty: (rows) => (
-      <ThinkingState
-        variant="Coding"
-        rows={Array.from(rows)}
-        active="Researching"
-        done={rows.length === 1 ? "Checked 1 source" : `Checked ${rows.length} sources`}
-        settled={settled}
-      />
-    ),
+    onNonEmpty: (rows) => {
+      const sources = rows.filter((row) => row.kind === "action").length;
+      return (
+        <ThinkingState
+          variant="Coding"
+          rows={Array.from(rows)}
+          active="Thinking"
+          done={sources === 0 ? "Thought it through" : `Thought it through · ${sources} ${sources === 1 ? "source" : "sources"}`}
+          working={working}
+          settled={settled}
+        />
+      );
+    },
   });
 
   return (
     <div className="flex w-full flex-col gap-3">
-      {reasoning}
       {trace}
       {answerSlot(reply)}
     </div>

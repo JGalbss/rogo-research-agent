@@ -6,7 +6,12 @@ import type { ResearchUIMessage } from "@/shared/chat";
 export type Part = ResearchUIMessage["parts"][number];
 export type ToolPart = Extract<Part, { toolCallId: string }>;
 
-export type TraceRow = { primary: string; secondary?: string; mono?: boolean };
+export type TraceRow = {
+  kind: "thought" | "action";
+  primary: string;
+  secondary?: string;
+  mono?: boolean;
+};
 
 export const answerText = (message: ResearchUIMessage): string =>
   pipe(message.parts, Arr.flatMap((part) => (part.type === "text" ? [part.text] : [])), Arr.join("\n\n"));
@@ -19,15 +24,6 @@ export const answerTokens = (text: string): StreamingToken[] =>
     text.split(/\s+/),
     Arr.filter(Str.isNonEmpty),
     Arr.map((word) => ({ text: word })),
-  );
-
-export const reasoningRows = (message: ResearchUIMessage): TraceRow[] =>
-  pipe(
-    message.parts,
-    Arr.flatMap((part) => (part.type === "reasoning" ? part.text.split(/\n\s*\n/) : [])),
-    Arr.map(Str.trim),
-    Arr.filter(Str.isNonEmpty),
-    Arr.map((primary) => ({ primary })),
   );
 
 const TOOL_LABELS = HashMap.make(
@@ -43,22 +39,34 @@ const Subject = Schema.Struct({
 });
 
 export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
-  pipe(
-    message.parts,
-    Arr.filter(isToolUIPart),
-    Arr.map((part: ToolPart) => {
-      const name = getToolName(part);
-      return {
-        primary: Option.getOrElse(HashMap.get(TOOL_LABELS, name), () => name),
-        secondary: Match.value(part).pipe(
-          Match.when({ state: "output-error" }, ({ errorText }) => `failed: ${errorText ?? "unknown"}`),
-          Match.orElse(({ input }) =>
-            Schema.decodeUnknownOption(Subject)(input).pipe(
-              Option.flatMap((subject) => Option.fromNullishOr(subject.company ?? subject.query)),
-              Option.getOrElse(() => ""),
-            ),
-          ),
+  Arr.flatMap(message.parts, (part) =>
+    Match.value(part).pipe(
+      Match.when({ type: "reasoning" }, ({ text }) =>
+        pipe(
+          text.split(/\n\s*\n/),
+          Arr.map(Str.trim),
+          Arr.filter(Str.isNonEmpty),
+          Arr.map((primary): TraceRow => ({ kind: "thought", primary })),
         ),
-      };
-    }),
+      ),
+      Match.when(isToolUIPart, (tool: ToolPart): TraceRow[] => {
+        const name = getToolName(tool);
+        return [
+          {
+            kind: "action",
+            primary: Option.getOrElse(HashMap.get(TOOL_LABELS, name), () => name),
+            secondary: Match.value(tool).pipe(
+              Match.when({ state: "output-error" }, ({ errorText }) => `failed: ${errorText ?? "unknown"}`),
+              Match.orElse(({ input }) =>
+                Schema.decodeUnknownOption(Subject)(input).pipe(
+                  Option.flatMap((subject) => Option.fromNullishOr(subject.company ?? subject.query)),
+                  Option.getOrElse(() => ""),
+                ),
+              ),
+            ),
+          },
+        ];
+      }),
+      Match.orElse(() => []),
+    ),
   );
