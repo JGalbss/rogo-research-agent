@@ -3,7 +3,6 @@ import { createUIMessageStream, generateId } from "ai";
 import { Data, Effect, Fiber, Option, Schema, Stream } from "effect";
 import { ChatId, ChatMessage, type ResearchUIMessage } from "../shared/chat.ts";
 import { Researcher } from "./agent/research-agent.ts";
-import { ChatIndex } from "./chat-index.ts";
 import { ChatStore, newChat } from "./chat.service.ts";
 import { AppConfig } from "./config.ts";
 import { DurableStreams } from "./streams.ts";
@@ -18,7 +17,7 @@ class InvalidChatRequest extends Data.TaggedError("InvalidChatRequest")<{
   readonly cause: unknown;
 }> {}
 
-type Services = Researcher | ChatStore | ChatIndex | DurableStreams;
+type Services = Researcher | ChatStore | DurableStreams;
 
 const turn = (
   request: typeof ChatRequest.Type,
@@ -26,7 +25,6 @@ const turn = (
   Effect.gen(function* () {
     const researcher = yield* Researcher;
     const store = yield* ChatStore;
-    const index = yield* ChatIndex;
     const streams = yield* DurableStreams;
     const context = yield* Effect.context();
     const run = Effect.runPromiseWith(context);
@@ -60,13 +58,11 @@ const turn = (
           Effect.gen(function* () {
             yield* store.put({ ...chat, messages: final });
             streams.clearActive(request.id);
-            yield* index.emit({ _tag: "GenerationFinished", chatId: request.id, streamId });
           }),
         ),
       onError: (error) => String(error),
     });
 
-    yield* index.emit({ _tag: "GenerationStarted", chatId: request.id, streamId, readUrl });
     yield* Effect.logInfo("chat", { chatId: request.id, messages: messages.length, streamId });
 
     return yield* streams.publish(target, source);
