@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button, type ButtonVariant } from "@/components/atoms/Button";
-import { EntityChip } from "@/components/atoms/EntityChip";
-import { ValuePill } from "@/components/atoms/ValuePill";
+import { Button, type ButtonVariant } from "@/frontend/components/atoms/Button";
+import { EntityChip } from "@/frontend/components/atoms/EntityChip";
+import { ValuePill } from "@/frontend/components/atoms/ValuePill";
 
 /* ─────────────────────────────────────────────────────────
  * RECOMMENDATION CARD

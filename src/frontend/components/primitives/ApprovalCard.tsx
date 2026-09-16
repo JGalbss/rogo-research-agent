@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { Button } from "@/components/atoms/Button";
-import GlideMenu from "@/components/primitives/GlideMenu";
+import { Button } from "@/frontend/components/atoms/Button";
+import GlideMenu from "@/frontend/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * APPROVAL CARD (human-in-the-loop)

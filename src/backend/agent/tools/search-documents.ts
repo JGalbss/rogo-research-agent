@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { documents } from "../../data.ts";
+import { documents } from "../../utils/data.ts";
 import { simulateLatency } from "./utils/latency.ts";
 import { ToolError } from "./utils/tool-error.ts";
 

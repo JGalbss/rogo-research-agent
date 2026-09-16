@@ -62,17 +62,17 @@ These files matter:
 
 | File | What it is |
 | --- | --- |
-| `src/server.ts` | Express server, one `POST /api/chat` endpoint |
-| `src/agent/research-agent.ts` | The Rogo Research agent — system prompt, research tools, editor pass, final answer |
-| `src/agent/base-agent.ts` | Wraps the AI SDK `ToolLoopAgent` and reports `AgentEvent`s while it works |
-| `src/agent/events.ts` | The events the agent reports: iterations, tool starts, ends and failures |
-| `src/agent/tools/` | One AI SDK `tool()` per research tool; `index.ts` assembles the toolset |
-| `src/data.ts` | All the research data. Fictional, local, deterministic |
-| `src/ui/App.tsx` | The chat interface |
-| `src/ui/main.tsx`, `src/ui/styles.css` | Mount point and styling |
+| `src/backend/server.ts` | Express server, one `POST /api/chat` endpoint |
+| `src/backend/agent/research-agent.ts` | The Rogo Research agent — system prompt, research tools, editor pass, final answer |
+| `src/backend/agent/base-agent.ts` | Wraps the AI SDK `ToolLoopAgent` and reports `AgentEvent`s while it works |
+| `src/backend/agent/events.ts` | The events the agent reports: iterations, tool starts, ends and failures |
+| `src/backend/agent/tools/` | One AI SDK `tool()` per research tool; `index.ts` assembles the toolset |
+| `src/backend/utils/data.ts` | All the research data. Fictional, local, deterministic |
+| `src/frontend/App.tsx` | The chat interface |
+| `src/frontend/main.tsx`, `src/frontend/styles.css` | Mount point and styling |
 | `vite.config.ts`, `package.json` | Vite dev server proxies `/api` to port 8787 |
 
-There are five fictional companies. The tools are backed entirely by `src/data.ts` —
+There are five fictional companies. The tools are backed entirely by `src/backend/utils/data.ts` —
 no network calls, no credentials beyond the model key, nothing to set up. Each tool
 sleeps for a few hundred milliseconds to stand in for a real API.
 

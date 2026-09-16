@@ -1,5 +1,5 @@
 import { defineConfig } from "react-doctor/api";
 
 export default defineConfig({
-  ignore: { files: ["src/components/**"] },
+  ignore: { files: ["src/frontend/components/**"] },
 });

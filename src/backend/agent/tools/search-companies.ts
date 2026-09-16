@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { companies } from "../../data.ts";
+import { companies } from "../../utils/data.ts";
 import { simulateLatency } from "./utils/latency.ts";
 
 export const searchCompanies = tool({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import GlideMenu from "@/components/primitives/GlideMenu";
+import GlideMenu from "@/frontend/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * SEARCH — command search with live filtering.

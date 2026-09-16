@@ -2,7 +2,7 @@
 
 import { ButtonHTMLAttributes } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/utils/cn";
+import { cn } from "@/frontend/utils/cn";
 
 const filledShadow = "shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]";
 

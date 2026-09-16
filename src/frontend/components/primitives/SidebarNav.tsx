@@ -3,7 +3,7 @@
 import { Check, EditPencil, Home, IceCream, LogOut, NavArrowDown, Plus, Search, Settings, SidebarCollapse, UserPlus, Xmark } from "iconoir-react";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import GlideMenu from "@/components/primitives/GlideMenu";
+import GlideMenu from "@/frontend/components/primitives/GlideMenu";
 
 /* ─────────────────────────────────────────────────────────
  * SIDEBAR NAV

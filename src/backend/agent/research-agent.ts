@@ -1,7 +1,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { ToolLoopAgent, stepCountIs } from "ai";
 import { Option } from "effect";
-import { companies } from "../data.ts";
+import { companies } from "../utils/data.ts";
 import { BaseAgent } from "./base-agent.ts";
 import type { AgentEvent } from "./events.ts";
 import { researchTools } from "./tools/index.ts";
