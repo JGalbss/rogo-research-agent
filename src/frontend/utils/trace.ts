@@ -19,6 +19,7 @@ const TOOL_LABELS = HashMap.make(
   ["getCompanyProfile", "Read company profile"],
   ["getFinancials", "Pulled financials"],
   ["searchDocuments", "Searched documents"],
+  ["getDocument", "Read document"],
 );
 
 const TOOL_OUTCOMES: Partial<Record<ToolUIPart["state"], ToolOutcome>> = {

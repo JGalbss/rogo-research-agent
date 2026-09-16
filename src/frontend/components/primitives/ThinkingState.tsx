@@ -254,8 +254,13 @@ export default function ThinkingState({
                   )
                 )}
                 <span className={`min-w-0 truncate text-[12.5px] ${row.kind === "thought" || (row.kind === undefined && variant === "Reasoning") ? "whitespace-normal leading-relaxed text-ink-2" : "font-medium text-ink"} ${variant === "Search" ? "animated-underline" : ""}`}>
-                  {row.streaming ? (
-                    <Streamdown mode="streaming" animated={edgeFade} controls={false} className="contents">
+                  {row.kind === "thought" ? (
+                    <Streamdown
+                      mode={row.streaming ? "streaming" : "static"}
+                      animated={row.streaming ? edgeFade : false}
+                      controls={false}
+                      className="contents"
+                    >
                       {row.primary}
                     </Streamdown>
                   ) : (

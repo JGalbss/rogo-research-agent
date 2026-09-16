@@ -1,4 +1,4 @@
-import { Array as Arr, Data, Match, pipe, String as Str } from "effect";
+import { Array as Arr, Data, Match, Option, pipe, String as Str } from "effect";
 import type { ResearchUIMessage } from "@/shared/chat";
 import { type TraceRow, traceRows } from "@/frontend/utils/trace";
 
@@ -22,9 +22,10 @@ export const messageText = (message: ResearchUIMessage): string =>
 
 export const classifyReply = (message: ResearchUIMessage, turn: TurnPhase): Reply => {
   const rows = traceRows(message);
-  return Match.value({ turn, text: messageText(message) }).pipe(
-    Match.when({ turn: "live", text: Str.isEmpty }, () => Reply.Working({ rows })),
-    Match.when({ turn: "live" }, ({ text }) => Reply.Answering({ rows, text })),
+  const answering = Option.contains(Option.map(Arr.last(message.parts), (part) => part.type), "text");
+  return Match.value({ turn, answering, text: messageText(message) }).pipe(
+    Match.when({ turn: "live", answering: true }, ({ text }) => Reply.Answering({ rows, text })),
+    Match.when({ turn: "live" }, () => Reply.Working({ rows })),
     Match.when({ text: Str.isEmpty }, () => Reply.OutOfSteps({ rows })),
     Match.orElse(({ text }) => Reply.Done({ rows, text })),
   );
