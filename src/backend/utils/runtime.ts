@@ -1,7 +1,7 @@
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { ResearcherLive } from "../agent/research-agent.ts";
 import { ChatIndexAt } from "../chat-index.ts";
-import { ChatStoreLive } from "../chat-store.ts";
+import { ChatStoreLive } from "../chat.service.ts";
 import { AppConfigLive } from "../config.ts";
 import { DurableStreams, DurableStreamsLive } from "../streams.ts";
 import { LoggerLive } from "./logger.ts";

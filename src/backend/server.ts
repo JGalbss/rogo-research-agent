@@ -4,7 +4,7 @@ import { Data, Effect, Option, Schema, Stream } from "effect";
 import { ChatId, ChatMessage, type ResearchUIMessage } from "../shared/chat.ts";
 import { Researcher } from "./agent/research-agent.ts";
 import { ChatIndex } from "./chat-index.ts";
-import { ChatStore, newChat } from "./chat-store.ts";
+import { ChatStore, newChat } from "./chat.service.ts";
 import { AppConfig } from "./config.ts";
 import { DurableStreams } from "./streams.ts";
 import { runtime } from "./utils/runtime.ts";
