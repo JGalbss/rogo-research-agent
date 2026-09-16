@@ -7,8 +7,8 @@ import {
 } from "ai";
 import { Effect } from "effect";
 import type { ResearchUIMessage } from "../shared/chat.ts";
-import { AgentEvent } from "./agent/events.ts";
-import { streamAnswer } from "./agent/research-agent.ts";
+import { AgentEvent } from "../shared/agent-event.ts";
+import { researcher } from "./agent/research-agent.ts";
 import { config } from "./config.ts";
 import { runtime } from "./utils/runtime.ts";
 
@@ -29,11 +29,11 @@ app.post("/api/chat", async (req: Request, res: Response) => {
   const stream = createUIMessageStream<ResearchUIMessage>({
     originalMessages: messages,
     execute: async ({ writer }) => {
-      const result = await streamAnswer(await convertToModelMessages(messages), (event) => {
+      const result = await researcher.stream(await convertToModelMessages(messages), (event) => {
         runtime.runSync(logEvent(event));
         writer.write({ type: "data-agent-event", data: event });
       });
-      writer.merge(result.toUIMessageStream());
+      writer.merge(result.toUIMessageStream({ sendReasoning: true, sendSources: true }));
     },
     onError: (error) => {
       runtime.runSync(Effect.logError("chat failed", error));

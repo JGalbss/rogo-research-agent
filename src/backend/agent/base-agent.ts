@@ -1,5 +1,5 @@
 import type { ModelMessage, ToolLoopAgent, ToolSet } from "ai";
-import { AgentEvent } from "./events.ts";
+import { AgentEvent } from "../../shared/agent-event.ts";
 
 export class BaseAgent<TOOLS extends ToolSet> {
   readonly #loop: ToolLoopAgent<never, TOOLS>;
