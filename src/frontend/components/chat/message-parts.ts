@@ -7,6 +7,7 @@ export type Part = ResearchUIMessage["parts"][number];
 export type ToolPart = Extract<Part, { toolCallId: string }>;
 
 export type TraceRow = {
+  key: string;
   kind: "thought" | "action";
   primary: string;
   secondary?: string;
@@ -39,20 +40,25 @@ const Subject = Schema.Struct({
 });
 
 export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
-  Arr.flatMap(message.parts, (part) =>
+  Arr.flatMap(message.parts, (part, partIndex) =>
     Match.value(part).pipe(
       Match.when({ type: "reasoning" }, ({ text }) =>
         pipe(
           text.split(/\n\s*\n/),
           Arr.map(Str.trim),
           Arr.filter(Str.isNonEmpty),
-          Arr.map((primary): TraceRow => ({ kind: "thought", primary })),
+          Arr.map((primary, paragraph): TraceRow => ({
+            key: `thought-${partIndex}-${paragraph}`,
+            kind: "thought",
+            primary,
+          })),
         ),
       ),
       Match.when(isToolUIPart, (tool: ToolPart): TraceRow[] => {
         const name = getToolName(tool);
         return [
           {
+            key: tool.toolCallId,
             kind: "action",
             primary: Option.getOrElse(HashMap.get(TOOL_LABELS, name), () => name),
             secondary: Match.value(tool).pipe(

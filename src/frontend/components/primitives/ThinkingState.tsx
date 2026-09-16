@@ -26,6 +26,8 @@ function useSequence(steps: number[], settled: boolean) {
 }
 
 type Row = {
+  /** stable identity for streamed rows whose text keeps changing */
+  key?: string;
   /** thought rows read as prose; action rows read as a labeled step */
   kind?: "thought" | "action";
   primary: string;
@@ -262,7 +264,7 @@ export default function ThinkingState({
               if (variant === "Search") {
                 return (
                   <a
-                    key={`${row.primary}-${i}`}
+                    key={row.key ?? `${row.primary}-${i}`}
                     href={row.href}
                     target="_blank"
                     rel="noreferrer"
@@ -278,7 +280,7 @@ export default function ThinkingState({
                 const selected = selectedTool === row.primary;
                 return (
                   <button
-                    key={`${row.primary}-${i}`}
+                    key={row.key ?? `${row.primary}-${i}`}
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setSelectedTool(selected ? null : row.primary)}
@@ -291,7 +293,7 @@ export default function ThinkingState({
               }
 
               return (
-                <div key={`${row.primary}-${i}`} className={rowClass} style={animation}>
+                <div key={row.key ?? `${row.primary}-${i}`} className={rowClass} style={animation}>
                   {content}
                 </div>
               );
