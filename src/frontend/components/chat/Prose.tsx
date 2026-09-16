@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Streamdown } from "streamdown";
+import { type Components, Streamdown } from "streamdown";
 
 const animated = {
   animation: "blurIn",
@@ -9,13 +9,29 @@ const animated = {
   stagger: 14,
 } as const;
 
+const components: Components = {
+  table: ({ children }) => (
+    <div className="my-4 overflow-x-auto">
+      <table className="w-full border-collapse text-[13.5px] leading-snug">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="text-left text-ink-2">{children}</thead>,
+  th: ({ children }) => (
+    <th className="border-b border-line px-3 py-2 text-[12.5px] font-medium">{children}</th>
+  ),
+  td: ({ children }) => (
+    <td className="border-b border-line-soft px-3 py-2 align-top tabular-nums">{children}</td>
+  ),
+};
+
 export function Prose({ text, streaming }: { text: string; streaming: boolean }): ReactElement {
   return (
     <Streamdown
       mode={streaming ? "streaming" : "static"}
       animated={streaming ? animated : false}
       controls={false}
-      className="text-[14.5px] leading-[1.65] text-ink [&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_td]:border-t [&_td]:border-line [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-[13px] [&_th]:font-medium [&_th]:text-ink-2"
+      components={components}
+      className="text-[14.5px] leading-[1.65] text-ink"
     >
       {text}
     </Streamdown>
