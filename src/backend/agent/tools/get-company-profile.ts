@@ -1,20 +1,16 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { companies } from "../../utils/data.ts";
+import { requireCompany } from "./utils/companies.ts";
 import { simulateLatency } from "./utils/latency.ts";
-import { ToolError } from "./utils/tool-error.ts";
 
 export const getCompanyProfile = tool({
   description:
-    "Get a company's profile: description, sector, headquarters, headcount, business segments and the filings we hold.",
+    "Get a company's profile: description, sector, headquarters, founding year, headcount, business segments with their share of revenue, and the filings we hold. Accepts an exact company name or ticker; the error lists the valid companies when the name does not resolve.",
   inputSchema: z.object({
-    company: z.string().describe("The exact company name as listed in the coverage universe, for example 'Acme Corp'."),
+    company: z.string().describe("Exact company name or ticker, for example 'Acme Corp' or 'ACME'."),
   }),
   execute: async ({ company }) => {
     await simulateLatency(450);
-    const profile = companies.find((candidate) => candidate.name === company);
-    if (profile === undefined)
-      throw new ToolError(`no profile found for "${company}"`);
-    return profile;
+    return requireCompany(company);
   },
 });
