@@ -105,6 +105,7 @@ export default function ThinkingState({
   icon,
   settled = false,
   working: workingProp,
+  trailing,
 }: {
   variant?: string;
   onSettled?: () => void;
@@ -112,6 +113,8 @@ export default function ThinkingState({
   settled?: boolean;
   /** drive the open/working state from real progress instead of the demo timer */
   working?: boolean;
+  /** right-aligned content on the header row, e.g. source pills */
+  trailing?: ReactNode;
   /** override the built-in trace content (keeps the primitive reusable) */
   rows?: Row[];
   active?: string;
@@ -158,6 +161,7 @@ export default function ThinkingState({
       }}
     >
       {/* header — shared across variants */}
+      <div className="flex w-full items-center gap-2">
       <button
         type="button"
         aria-expanded={expanded}
@@ -177,12 +181,13 @@ export default function ThinkingState({
         <span role="status" className="contents">
           {working ? (
             <span
-              className="bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
+              key={v.active}
+              className="inline-block max-w-[440px] truncate bg-clip-text text-[13px] font-medium whitespace-nowrap text-transparent"
               style={{
                 backgroundImage:
                   "linear-gradient(90deg, var(--ink-3) 35%, var(--ink) 50%, var(--ink-3) 65%)",
                 backgroundSize: "200% 100%",
-                animation: "shimmer-text 1.4s linear infinite",
+                animation: "fade-up 260ms cubic-bezier(0.23,1,0.32,1) both, shimmer-text 1.4s linear infinite",
               }}
             >
               {v.active}
@@ -204,6 +209,8 @@ export default function ThinkingState({
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
+      {trailing ? <span className="ml-auto flex shrink-0 items-center gap-1">{trailing}</span> : null}
+      </div>
 
       {/* expandable trace */}
       <div

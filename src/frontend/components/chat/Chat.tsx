@@ -1,11 +1,11 @@
 import { useChat } from "@ai-sdk/react";
 import { Array as Arr, Option } from "effect";
 import { AnimatePresence, motion } from "motion/react";
-import { type ReactElement, useEffect, useRef, useState } from "react";
+import { type ReactElement, useRef, useState } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
+import { useFollowBottom } from "@/frontend/hooks/use-follow-bottom";
 import { chatFor } from "@/frontend/store/chat";
 import type { ChatEntry } from "@/frontend/store/chats";
-import { AnimatedMessage } from "./AnimatedMessage.tsx";
 import { ChatView, acceptsInput, classifyChatView } from "./chat-view.ts";
 import { ExamplePrompts } from "./ExamplePrompts.tsx";
 import { MessageBubble } from "./MessageBubble.tsx";
@@ -25,30 +25,21 @@ export function Chat({
   const view = classifyChatView({
     status,
     messageCount: messages.length,
+    lastRole: Option.map(Arr.last(messages), (message) => message.role),
     error,
     stored: entry.createdAt.length > 0,
   });
   const settled = acceptsInput(view);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [openedWith] = useState(() => messages.length);
-  const followed = useRef(false);
+  useFollowBottom(scrollRef, [messages, status]);
 
-  useEffect(() => {
-    const node = scrollRef.current;
-    if (node === null) return;
-    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    if (followed.current && distance > 120) return;
-    node.scrollTop = node.scrollHeight;
-    followed.current = true;
-  }, [messages, status]);
-
-  const awaitingReply = Option.exists(Arr.last(messages), (message) => message.role === "user");
   const statusSlot = ChatView.$match(view, {
     Empty: () => null,
     Loading: () => null,
     Idle: () => null,
-    Streaming: () => (awaitingReply ? <ThinkingState variant="Coding" rows={[]} active="Thinking" working /> : null),
+    Streaming: () => null,
     Submitted: () => <ThinkingState variant="Coding" rows={[]} active="Thinking" working />,
+    Awaiting: () => <ThinkingState variant="Coding" rows={[]} active="Thinking" working />,
     Failed: ({ message }) => (
       <p className="text-[13px] text-red">Something went wrong: {message}</p>
     ),
@@ -78,16 +69,10 @@ export function Chat({
       </AnimatePresence>
 
       <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 px-6 pt-10 pb-4">
-        <AnimatePresence initial={false}>
-          {messages.map((message, index) => (
-            <AnimatedMessage key={message.id} index={index} waterfall={index < openedWith}>
-              <MessageBubble message={message} settled={settled} />
-            </AnimatedMessage>
-          ))}
-          <div key="status" className="min-h-8">
-            {statusSlot}
-          </div>
-        </AnimatePresence>
+        {messages.map((message) => (
+          <MessageBubble key={message.id} message={message} settled={settled} />
+        ))}
+        <div className="min-h-8">{statusSlot}</div>
       </div>
     </div>
   );

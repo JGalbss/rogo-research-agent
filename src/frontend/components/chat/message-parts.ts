@@ -1,5 +1,5 @@
 import { getToolName, isToolUIPart } from "ai";
-import { Array as Arr, HashMap, Match, Option, pipe, Schema, String as Str } from "effect";
+import { Array as Arr, Data, HashMap, Match, Option, pipe, Schema, String as Str } from "effect";
 import type { StreamingToken } from "@/frontend/components/primitives/StreamingText";
 import type { ResearchUIMessage } from "@/shared/chat";
 
@@ -77,3 +77,40 @@ export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
       Match.orElse(() => []),
     ),
   );
+
+export const traceHeadline = (rows: ReadonlyArray<TraceRow>): string =>
+  Option.match(Arr.last(rows), {
+    onNone: () => "Thinking",
+    onSome: (row) =>
+      row.kind === "action" && row.secondary ? `${row.primary} · ${row.secondary}` : row.primary,
+  });
+
+export const traceSubjects = (rows: ReadonlyArray<TraceRow>): string[] =>
+  Arr.dedupe(rows.flatMap((row) => (row.kind === "action" && row.secondary ? [row.secondary] : [])));
+
+export const traceSummary = (rows: ReadonlyArray<TraceRow>): string => {
+  const sources = rows.filter((row) => row.kind === "action").length;
+  if (sources === 0) return "Thought it through";
+  return `Thought it through · ${sources} ${sources === 1 ? "source" : "sources"}`;
+};
+
+export type Reply = Data.TaggedEnum<{
+  Working: { readonly rows: TraceRow[] };
+  Answering: { readonly rows: TraceRow[]; readonly text: string };
+  Done: { readonly rows: TraceRow[]; readonly text: string };
+  OutOfSteps: { readonly rows: TraceRow[] };
+}>;
+
+export const Reply = Data.taggedEnum<Reply>();
+
+export type TurnPhase = "open" | "settled";
+
+export const classifyReply = (message: ResearchUIMessage, turn: TurnPhase): Reply => {
+  const rows = traceRows(message);
+  return Match.value({ turn, text: answerText(message), streaming: isStreaming(message) }).pipe(
+    Match.when({ text: Str.isNonEmpty, streaming: true }, ({ text }) => Reply.Answering({ rows, text })),
+    Match.when({ text: Str.isNonEmpty }, ({ text }) => Reply.Done({ rows, text })),
+    Match.when({ turn: "settled" }, () => Reply.OutOfSteps({ rows })),
+    Match.orElse(() => Reply.Working({ rows })),
+  );
+};
