@@ -9,13 +9,13 @@ const MAX_RESULTS = 5;
 
 export const searchDocuments = tool({
   description:
-    "Keyword search over earnings call transcripts, filing excerpts and press releases.",
+    "Keyword search over earnings call transcripts, filing excerpts and press releases. Returns up to 5 documents that contain at least one of the terms, best matches first, each with its id, company, form, title, date and full body text. The index accepts at most 6 terms per query and rejects longer queries.",
   inputSchema: z.object({
-    query: z.string().describe("Keywords to search for."),
+    query: z.string().describe("Up to 6 keywords separated by spaces."),
     company: z
       .string()
       .optional()
-      .describe("Optional. Restrict the search to one company."),
+      .describe("Optional. The exact company name from the coverage universe to restrict the search to."),
   }),
   execute: async ({ query, company }) => {
     await simulateLatency(700);

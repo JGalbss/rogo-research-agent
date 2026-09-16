@@ -8,7 +8,7 @@ export const getCompanyProfile = tool({
   description:
     "Get a company's profile: description, sector, headquarters, headcount, business segments and the filings we hold.",
   inputSchema: z.object({
-    company: z.string().describe("The company name."),
+    company: z.string().describe("The exact company name as listed in the coverage universe, for example 'Acme Corp'."),
   }),
   execute: async ({ company }) => {
     await simulateLatency(450);
