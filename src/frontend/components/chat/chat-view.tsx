@@ -1,5 +1,7 @@
 import type { ChatStatus } from "ai";
 import { Data, Match, Option } from "effect";
+import type { ReactNode } from "react";
+import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 
 export type ChatView = Data.TaggedEnum<{
   Empty: {};
@@ -32,3 +34,25 @@ export const classifyChatView = (input: {
     Match.orElse(() => ChatView.Idle()),
   );
 
+export interface ViewTraits {
+  readonly greeting: boolean;
+  readonly liveTurn: boolean;
+  readonly indicator: ReactNode;
+}
+
+const idle: ViewTraits = { greeting: false, liveTurn: false, indicator: null };
+
+const thinking = <ThinkingState variant="Coding" rows={[]} active="Thinking" working />;
+
+export const viewTraits = ChatView.$match({
+  Empty: (): ViewTraits => ({ ...idle, greeting: true }),
+  Loading: (): ViewTraits => idle,
+  Idle: (): ViewTraits => idle,
+  Submitted: (): ViewTraits => ({ ...idle, liveTurn: true, indicator: thinking }),
+  Awaiting: (): ViewTraits => ({ ...idle, liveTurn: true, indicator: thinking }),
+  Streaming: (): ViewTraits => ({ ...idle, liveTurn: true }),
+  Failed: ({ message }): ViewTraits => ({
+    ...idle,
+    indicator: <p className="text-[13px] text-red">Something went wrong: {message}</p>,
+  }),
+});

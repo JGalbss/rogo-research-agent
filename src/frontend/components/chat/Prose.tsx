@@ -13,20 +13,35 @@ const edgeFade = {
 const components: Components = {
   table: ({ children }) => (
     <div className="my-4 overflow-x-auto">
-      <table className="w-full border-collapse text-[13.5px] leading-snug">{children}</table>
+      <table className="w-full border-collapse text-[13.5px] leading-snug">
+        {children}
+      </table>
     </div>
   ),
-  thead: ({ children }) => <thead className="text-left text-ink-2">{children}</thead>,
+  thead: ({ children }) => (
+    <thead className="text-left text-ink-2">{children}</thead>
+  ),
   th: ({ children }) => (
-    <th className="border-b border-line px-3 py-2 text-[12.5px] font-medium">{children}</th>
+    <th className="border-b border-line px-3 py-2 text-[12.5px] font-medium">
+      {children}
+    </th>
   ),
   td: ({ children }) => (
-    <td className="border-b border-line-soft px-3 py-2 align-top tabular-nums">{children}</td>
+    <td className="border-b border-line-soft px-3 py-2 align-top tabular-nums">
+      {children}
+    </td>
   ),
 };
 
-export function Prose({ text, streaming }: { text: string; streaming: boolean }): ReactElement {
+export function Prose({
+  text,
+  streaming,
+}: {
+  text: string;
+  streaming: boolean;
+}): ReactElement {
   const shown = useSmoothedText(text, streaming ? "live" : "instant");
+
   return (
     <Streamdown
       mode={streaming ? "streaming" : "static"}
