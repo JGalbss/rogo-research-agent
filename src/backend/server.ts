@@ -1,16 +1,9 @@
-import "dotenv/config";
 import express from "express";
 import { Effect } from "effect";
 import { AgentEvent } from "./agent/events.ts";
 import { answerQuestion } from "./agent/research-agent.ts";
+import { config } from "./config.ts";
 import { runtime } from "./utils/runtime.ts";
-
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error(
-    "\nANTHROPIC_API_KEY is not set.\nCopy .env.example to .env and add your key, then run `npm run dev` again.\n",
-  );
-  process.exit(1);
-}
 
 const app = express();
 app.use(express.json());
@@ -35,7 +28,6 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-const port = Number(process.env.PORT ?? 8787);
-app.listen(port, () => {
-  runtime.runSync(Effect.logInfo("listening", { url: `http://localhost:${port}` }));
+app.listen(config.port, () => {
+  runtime.runSync(Effect.logInfo("listening", { url: `http://localhost:${config.port}` }));
 });

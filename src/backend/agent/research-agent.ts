@@ -1,14 +1,13 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { ToolLoopAgent, stepCountIs } from "ai";
-import { Option } from "effect";
+import { Option, Redacted } from "effect";
+import { config } from "../config.ts";
 import { companies } from "../utils/data.ts";
 import { BaseAgent } from "./base-agent.ts";
 import type { AgentEvent } from "./events.ts";
 import { researchTools } from "./tools/index.ts";
 
-const model = anthropic(process.env.ROGO_MODEL ?? "claude-sonnet-5");
-const MAX_STEPS = 12;
-const MAX_OUTPUT_TOKENS = 16000;
+const anthropic = createAnthropic({ apiKey: Redacted.value(config.anthropicApiKey) });
 
 const coverageUniverse = companies
   .map(
@@ -35,11 +34,11 @@ export interface AgentResult {
 
 const researcher = new BaseAgent(
   new ToolLoopAgent({
-    model,
+    model: anthropic(config.model),
     instructions: INSTRUCTIONS,
     tools: researchTools,
-    stopWhen: stepCountIs(MAX_STEPS),
-    maxOutputTokens: MAX_OUTPUT_TOKENS,
+    stopWhen: stepCountIs(config.maxSteps),
+    maxOutputTokens: config.maxOutputTokens,
   }),
 );
 
