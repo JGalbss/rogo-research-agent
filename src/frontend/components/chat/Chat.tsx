@@ -10,7 +10,7 @@ import { parseQuestion } from "@/frontend/store/question";
 import { ChatView, acceptsInput, classifyChatView } from "./chat-view.ts";
 import { ExamplePrompts } from "./ExamplePrompts.tsx";
 import { MessageBubble } from "./MessageBubble.tsx";
-import { MessageReveal } from "./MessageReveal.tsx";
+import { AnimatedMessage } from "./AnimatedMessage.tsx";
 
 const enter = { opacity: 0, y: 8 };
 const shown = { opacity: 1, y: 0 };
@@ -18,8 +18,8 @@ const leave = { opacity: 0 };
 
 export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
   const { messages, sendMessage, status, error } = useChat({
-    chat: chatFor(entry.id, entry.messages),
-    resume: true,
+    chat: chatFor(entry),
+    resume: Option.isSome(entry.generation),
   });
   const view = classifyChatView({ status, messageCount: messages.length, error });
   const settled = acceptsInput(view);
@@ -51,9 +51,9 @@ export function Chat({ entry }: { entry: ChatEntry }): ReactElement {
       <div className="flex flex-1 flex-col gap-6 pt-10">
         <AnimatePresence initial={false}>
           {messages.map((message, index) => (
-            <MessageReveal key={message.id} index={index}>
+            <AnimatedMessage key={message.id} index={index}>
               <MessageBubble message={message} settled={settled} />
-            </MessageReveal>
+            </AnimatedMessage>
           ))}
           <motion.div
             key={view._tag}

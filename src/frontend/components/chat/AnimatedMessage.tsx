@@ -3,7 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 
 const EASE: [number, number, number, number] = [0.23, 1, 0.32, 1];
 
-export function MessageReveal({
+export function AnimatedMessage({
   index,
   children,
 }: {
