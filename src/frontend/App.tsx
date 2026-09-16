@@ -36,6 +36,7 @@ export function App(): ReactElement {
         fill
         recents={recents}
         activeTitle={entry.title}
+        activeId={entry.id}
         onNewChat={startNewChat}
         onPick={selectChat}
         collapsed={sidebarCollapsed}

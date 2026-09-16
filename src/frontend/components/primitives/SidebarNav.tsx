@@ -35,6 +35,8 @@ const DEFAULT_RECENTS: SidebarRecent[] = [
 
 type SidebarNavProps = {
   activeTitle?: string | null;
+  /** highlight by id; wins over activeTitle when provided */
+  activeId?: string | null;
   className?: string;
   fill?: boolean;
   onNewChat?: () => void;
@@ -190,6 +192,7 @@ function WorkspaceMenu({
 
 export default function SidebarNav({
   activeTitle,
+  activeId,
   className = "",
   fill = false,
   onNewChat,
@@ -382,7 +385,7 @@ export default function SidebarNav({
 
           <GlideGroup>
             {visibleRecents.map((item) => {
-              const active = item.label === selectedTitle;
+              const active = activeId === undefined ? item.label === selectedTitle : item.id === activeId;
               return (
                 <button
                   key={item.id}

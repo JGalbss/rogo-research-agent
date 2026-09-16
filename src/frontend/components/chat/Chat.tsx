@@ -1,5 +1,5 @@
 import { useChat } from "@ai-sdk/react";
-import { Option } from "effect";
+import { Array as Arr, Option } from "effect";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactElement, useEffect, useRef, useState } from "react";
 import LoadingState from "@/frontend/components/primitives/LoadingState";
@@ -34,10 +34,11 @@ export function Chat({
     settledOnce.current = true;
   }, [messages, status]);
 
+  const awaitingReply = Option.exists(Arr.last(messages), (message) => message.role === "user");
   const statusSlot = ChatView.$match(view, {
     Empty: () => null,
     Idle: () => null,
-    Streaming: () => null,
+    Streaming: () => (awaitingReply ? <LoadingState label="Researching" /> : null),
     Submitted: () => <LoadingState label="Researching" />,
     Failed: ({ message }) => (
       <p className="text-[13px] text-red">Something went wrong: {message}</p>
