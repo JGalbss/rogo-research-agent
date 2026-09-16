@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import type { ResearchUIMessage } from "@/shared/chat";
 import { useSmoothedText } from "@/frontend/hooks/use-smoothed-text";
-import { answerText, isStreaming, traceRows, type TraceRow } from "./message-parts.ts";
+import { answerText, isStreaming, traceRows } from "./message-parts.ts";
 import { Prose } from "./Prose.tsx";
 
 const OUT_OF_STEPS_ANSWER =
