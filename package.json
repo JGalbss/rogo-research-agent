@@ -7,7 +7,8 @@
     "dev:server": "tsx watch src/server.ts",
     "dev:web": "vite",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "oxlint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
@@ -17,11 +18,13 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.83.0",
     "@types/express": "^5.0.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "concurrently": "^10.0.5",
+    "oxlint": "1.83.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
