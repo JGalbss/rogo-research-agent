@@ -65,7 +65,12 @@ export function App(): ReactElement {
             <Chat entry={entry} onAsk={(text) => ask(entry, text)} />
           </motion.div>
         </AnimatePresence>
-        <div className="mx-auto w-full max-w-[740px] shrink-0 px-6 pt-3 pb-6">
+        <div className="relative mx-auto w-full max-w-[740px] shrink-0 px-6 pt-3 pb-6">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -top-14 h-14"
+            style={{ background: "linear-gradient(to top, var(--page) 20%, transparent)" }}
+          />
           <PromptBar
             demo={false}
             placeholder="Ask a research question…"
