@@ -25,11 +25,13 @@ export function Chat({
   const view = classifyChatView({ status, messageCount: messages.length, error });
   const settled = acceptsInput(view);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const settledOnce = useRef(false);
 
   useEffect(() => {
     const node = scrollRef.current;
     if (node === null) return;
-    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+    node.scrollTo({ top: node.scrollHeight, behavior: settledOnce.current ? "smooth" : "instant" });
+    settledOnce.current = true;
   }, [messages, status]);
 
   const statusSlot = ChatView.$match(view, {
@@ -45,7 +47,7 @@ export function Chat({
   return (
     <div
       ref={scrollRef}
-      className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
+      className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <AnimatePresence>
         {ChatView.$is("Empty")(view) ? (
