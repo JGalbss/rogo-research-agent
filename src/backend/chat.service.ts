@@ -1,6 +1,6 @@
 import { Array as Arr, type Config, Context, Data, DateTime, Effect, Layer, Option, Schema } from "effect";
 import { SqlClient, type SqlError, SqlSchema } from "effect/unstable/sql";
-import { type Chat, ChatId, type ChatSummary, chatTitle } from "../shared/chat.ts";
+import { type Chat, ChatId, ChatMessage, type ChatSummary, chatTitle } from "../shared/chat.ts";
 import { ChatIndex, type ChatIndexError } from "./chat-index.ts";
 import { DatabaseLive } from "./db/database.ts";
 import { ChatRow } from "./db/schema.ts";
@@ -17,6 +17,8 @@ interface ChatStoreApi {
 }
 
 export class ChatStore extends Context.Service<ChatStore, ChatStoreApi>()("ChatStore") {}
+
+const plainMessages = Schema.decodeUnknownSync(Schema.Array(ChatMessage));
 
 export const newChat = (id: ChatId): Effect.Effect<Chat> =>
   DateTime.now.pipe(Effect.map((now) => ({ id, createdAt: DateTime.formatIso(now), messages: [] })));
@@ -49,7 +51,10 @@ const ChatStoreSql: Layer.Layer<ChatStore, never, SqlClient.SqlClient | ChatInde
           onNone: () => 0,
           onSome: (existing) => existing.messages.length,
         });
-        const row = yield* Schema.encodeEffect(ChatRow.insert)(chat);
+        const row = yield* Schema.encodeEffect(ChatRow.insert)({
+          ...chat,
+          messages: plainMessages(JSON.parse(JSON.stringify(chat.messages))),
+        });
         yield* sql`insert into chats ${sql.insert(row)} on conflict(id) do update set messages = excluded.messages`;
         if (Option.isNone(previous)) {
           yield* index.emit({ _tag: "ChatCreated", id: chat.id, createdAt: chat.createdAt });

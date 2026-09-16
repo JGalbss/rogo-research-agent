@@ -15,8 +15,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 
 const STAGES = [800, 600, 1800, 2600, 1600];
 
-function useSequence(steps: number[]) {
-  const [stage, setStage] = useState(0);
+function useSequence(steps: number[], settled: boolean) {
+  const [stage, setStage] = useState(settled ? steps.length - 1 : 0);
   useEffect(() => {
     if (stage >= steps.length - 1) return;
     const t = setTimeout(() => setStage((s) => s + 1), steps[stage]);
@@ -97,9 +97,12 @@ export default function ThinkingState({
   active,
   done,
   icon,
+  settled = false,
 }: {
   variant?: string;
   onSettled?: () => void;
+  /** mount already collapsed and complete (for restored transcripts) */
+  settled?: boolean;
   /** override the built-in trace content (keeps the primitive reusable) */
   rows?: Row[];
   active?: string;
@@ -107,7 +110,7 @@ export default function ThinkingState({
   /** override the header glyph (defaults to the sparkle) */
   icon?: ReactNode;
 }) {
-  const stage = useSequence(STAGES);
+  const stage = useSequence(STAGES, settled);
   const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const base = VARIANTS[variant] ?? VARIANTS.Steps;

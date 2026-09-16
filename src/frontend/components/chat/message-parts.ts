@@ -1,5 +1,5 @@
 import { getToolName, isToolUIPart } from "ai";
-import { Array as Arr, Match, pipe, String as Str } from "effect";
+import { Array as Arr, HashMap, Match, Option, pipe, Schema, String as Str } from "effect";
 import type { StreamingToken } from "@/frontend/components/primitives/StreamingText";
 import type { ResearchUIMessage } from "@/shared/chat";
 
@@ -30,16 +30,35 @@ export const reasoningRows = (message: ResearchUIMessage): TraceRow[] =>
     Arr.map((primary) => ({ primary })),
   );
 
+const TOOL_LABELS = HashMap.make(
+  ["searchCompanies", "Searched companies"],
+  ["getCompanyProfile", "Read company profile"],
+  ["getFinancials", "Pulled financials"],
+  ["searchDocuments", "Searched documents"],
+);
+
+const Subject = Schema.Struct({
+  company: Schema.optionalKey(Schema.String),
+  query: Schema.optionalKey(Schema.String),
+});
+
 export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
   pipe(
     message.parts,
     Arr.filter(isToolUIPart),
-    Arr.map((part: ToolPart) => ({
-      primary: getToolName(part),
-      secondary: Match.value(part).pipe(
-        Match.when({ state: "output-error" }, ({ errorText }) => `failed: ${errorText ?? "unknown"}`),
-        Match.orElse(({ input }) => JSON.stringify(input ?? {})),
-      ),
-      mono: true,
-    })),
+    Arr.map((part: ToolPart) => {
+      const name = getToolName(part);
+      return {
+        primary: Option.getOrElse(HashMap.get(TOOL_LABELS, name), () => name),
+        secondary: Match.value(part).pipe(
+          Match.when({ state: "output-error" }, ({ errorText }) => `failed: ${errorText ?? "unknown"}`),
+          Match.orElse(({ input }) =>
+            Schema.decodeUnknownOption(Subject)(input).pipe(
+              Option.flatMap((subject) => Option.fromNullishOr(subject.company ?? subject.query)),
+              Option.getOrElse(() => ""),
+            ),
+          ),
+        ),
+      };
+    }),
   );

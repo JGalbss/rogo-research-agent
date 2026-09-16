@@ -37,7 +37,13 @@ export function AssistantReply({
   const reasoning = Arr.match(reasoningRows(message), {
     onEmpty: () => null,
     onNonEmpty: (rows) => (
-      <ThinkingState variant="Reasoning" rows={Array.from(rows)} active="Thinking" done="Thought it through" />
+      <ThinkingState
+        variant="Reasoning"
+        rows={Array.from(rows)}
+        active="Thinking"
+        done="Thought it through"
+        settled={settled}
+      />
     ),
   });
   const trace = Arr.match(traceRows(message), {
@@ -47,7 +53,8 @@ export function AssistantReply({
         variant="Coding"
         rows={Array.from(rows)}
         active="Researching"
-        done={`Ran ${rows.length} tools`}
+        done={rows.length === 1 ? "Checked 1 source" : `Checked ${rows.length} sources`}
+        settled={settled}
       />
     ),
   });

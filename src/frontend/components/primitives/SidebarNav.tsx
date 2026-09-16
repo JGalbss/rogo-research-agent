@@ -257,34 +257,15 @@ export default function SidebarNav({
     >
       <div className="flex min-h-0 w-[224px] shrink-0 flex-col">
         <div className="relative mb-2.5 h-10 shrink-0">
-          <button
-            ref={workspaceButtonRef}
-            data-workspace-trigger
-            type="button"
-            aria-expanded={workspaceOpen}
+          <div
             aria-hidden={collapsed}
-            tabIndex={collapsed ? -1 : 0}
-            onClick={() => {
-              if (!workspaceOpen && workspaceButtonRef.current) {
-                const rect = workspaceButtonRef.current.getBoundingClientRect();
-                setWorkspacePosition({ top: rect.bottom + 6, left: rect.left });
-              }
-              setWorkspaceOpen((open) => !open);
-            }}
-            className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
+            className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left"
           >
-            <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
-              <IceCream width={18} height={18} />
-            </span>
-            <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2">
+            <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-semibold text-ink">
               {WORKSPACE.name}
             </span>
-            <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
-              <NavArrowDown width={16} height={16} />
-            </span>
-          </button>
+          </div>
 
-          {workspaceOpen && <WorkspaceMenu position={workspacePosition} onClose={() => setWorkspaceOpen(false)} />}
 
           <button
             type="button"
