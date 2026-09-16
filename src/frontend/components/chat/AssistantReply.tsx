@@ -1,19 +1,16 @@
+import { Array as Arr } from "effect";
 import type { ReactElement } from "react";
-import { useLiveTrace } from "@/frontend/hooks/use-live-trace";
 import type { ResearchUIMessage } from "@/shared/chat";
 import { Prose } from "./Prose.tsx";
-import { Reply, type TurnPhase, classifyReply } from "@/frontend/utils/reply";
+import {
+  ReplySegment,
+  type TurnPhase,
+  replySegments,
+} from "@/frontend/utils/reply";
 import { TraceView } from "./TraceView.tsx";
 
 const OUT_OF_STEPS_ANSWER =
   "I looked at a number of sources but ran out of research steps before I could pull the answer together. Try asking a narrower question.";
-
-const answer = Reply.$match({
-  Working: () => null,
-  Answering: ({ text }) => <Prose text={text} streaming />,
-  Done: ({ text }) => <Prose text={text} streaming={false} />,
-  OutOfSteps: () => <Prose text={OUT_OF_STEPS_ANSWER} streaming={false} />,
-});
 
 export function AssistantReply({
   message,
@@ -22,11 +19,32 @@ export function AssistantReply({
   message: ResearchUIMessage;
   turn: TurnPhase;
 }): ReactElement {
-  const reply = classifyReply(message, turn);
+  const segments = replySegments(message);
+  const last = segments.length - 1;
+  const live = turn === "live";
+  const outOfSteps =
+    turn === "settled" && Arr.every(segments, ReplySegment.$is("Trace"));
+
   return (
     <div className="flex w-full flex-col gap-3">
-      <TraceView rows={useLiveTrace(reply)} reply={reply} turn={turn} />
-      {answer(reply)}
+      {segments.map((segment, index) =>
+        ReplySegment.$match(segment, {
+          Trace: ({ rows }) => (
+            <TraceView
+              key={index}
+              rows={rows}
+              working={live && index === last}
+              settled={turn === "settled"}
+            />
+          ),
+          Answer: ({ text }) => (
+            <Prose key={index} text={text} streaming={live && index === last} />
+          ),
+        }),
+      )}
+      {outOfSteps ? (
+        <Prose text={OUT_OF_STEPS_ANSWER} streaming={false} />
+      ) : null}
     </div>
   );
 }

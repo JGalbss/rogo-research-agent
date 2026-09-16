@@ -1,29 +1,29 @@
 import type { ReactElement } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
-import { Reply, type TurnPhase } from "@/frontend/utils/reply";
-import { SourcePills } from "./SourcePills.tsx";
+import { useLiveTrace } from "@/frontend/hooks/use-live-trace";
 import { type TraceRow, traceHeadline, traceSources, traceSummary } from "@/frontend/utils/trace";
+import { SourcePills } from "./SourcePills.tsx";
 
 export function TraceView({
   rows,
-  reply,
-  turn,
+  working,
+  settled,
 }: {
   rows: TraceRow[];
-  reply: Reply;
-  turn: TurnPhase;
+  working: boolean;
+  settled: boolean;
 }): ReactElement | null {
-  const working = Reply.$is("Working")(reply);
-  if (rows.length === 0 && !working) return null;
+  const shown = useLiveTrace(rows, working ? "live" : "settled");
+  if (!working && rows.length === 0) return null;
   return (
     <ThinkingState
       variant="Coding"
-      rows={rows}
-      active={traceHeadline(rows)}
-      done={traceSummary(rows)}
+      rows={shown}
+      active={traceHeadline(shown)}
+      done={traceSummary(shown)}
       working={working}
-      settled={turn === "settled"}
-      trailing={<SourcePills subjects={traceSources(rows)} />}
+      settled={settled}
+      trailing={<SourcePills subjects={traceSources(shown)} />}
     />
   );
 }

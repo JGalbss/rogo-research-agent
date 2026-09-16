@@ -8,7 +8,7 @@ import { UserMessage } from "./UserMessage.tsx";
 export const MessageBubble = memo(
   ({ message, turn }: { message: ResearchUIMessage; turn: TurnPhase }): ReactElement =>
     Match.value(message.role).pipe(
-      Match.when("user", () => <UserMessage text={messageText(message)} />),
+      Match.when("user", () => <UserMessage text={messageText(message.parts)} />),
       Match.orElse(() => <AssistantReply message={message} turn={turn} />),
     ),
 );

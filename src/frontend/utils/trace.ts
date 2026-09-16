@@ -32,8 +32,8 @@ const Subject = Schema.Struct({
   query: Schema.optionalKey(Schema.String),
 });
 
-export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
-  Arr.flatMap(message.parts, (part, index) =>
+export const traceRows = (parts: ReadonlyArray<ResearchUIMessage["parts"][number]>): TraceRow[] =>
+  Arr.flatMap(parts, (part, index) =>
     Match.value(part).pipe(
       Match.when({ type: "reasoning" }, ({ text }) =>
         text
