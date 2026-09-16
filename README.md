@@ -58,13 +58,15 @@ Some questions to start with:
 
 ## The code
 
-Nine files matter:
+These files matter:
 
 | File | What it is |
 | --- | --- |
 | `src/server.ts` | Express server, one `POST /api/chat` endpoint |
-| `src/agent.ts` | The agent loop — system prompt, tool-use loop, final answer |
-| `src/tools.ts` | Tool schemas and tool execution |
+| `src/agent/research-agent.ts` | The Rogo Research agent — system prompt, research tools, editor pass, final answer |
+| `src/agent/base-agent.ts` | Wraps the AI SDK `ToolLoopAgent` and reports `AgentEvent`s while it works |
+| `src/agent/events.ts` | The events the agent reports: iterations, tool starts, ends and failures |
+| `src/agent/tools/` | One AI SDK `tool()` per research tool; `index.ts` assembles the toolset |
 | `src/data.ts` | All the research data. Fictional, local, deterministic |
 | `src/ui/App.tsx` | The chat interface |
 | `src/ui/main.tsx`, `src/ui/styles.css` | Mount point and styling |

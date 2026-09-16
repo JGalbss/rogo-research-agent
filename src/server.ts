@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
-import { runAgent } from "./agent.ts";
+import { AgentEvent } from "./agent/events.ts";
+import { answerQuestion } from "./agent/research-agent.ts";
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error(
@@ -12,27 +13,19 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const app = express();
 app.use(express.json());
 
+const logEvent = AgentEvent.$match({
+  Iteration: ({ n }) => console.log(`[agent] iteration ${n}`),
+  ToolStart: ({ name, input }) => console.log(`[tool]  → ${name} ${input}`),
+  ToolEnd: ({ name, ms }) => console.log(`[tool]  ← ${name} (${ms}ms)`),
+  ToolFailed: ({ name, message }) => console.log(`[tool]  ! ${name}: ${message}`),
+});
+
 app.post("/api/chat", async (req, res) => {
   const message = String(req.body.message ?? "");
   console.log(`\n[chat] ${message}`);
 
   try {
-    const result = await runAgent(message, (event) => {
-      switch (event.type) {
-        case "iteration":
-          console.log(`[agent] iteration ${event.n}`);
-          break;
-        case "tool_start":
-          console.log(`[tool]  → ${event.name} ${JSON.stringify(event.input)}`);
-          break;
-        case "tool_end":
-          console.log(`[tool]  ← ${event.name} (${event.ms}ms)`);
-          break;
-        case "tool_failed":
-          console.log(`[tool]  ! ${event.name}: ${event.message}`);
-          break;
-      }
-    });
+    const result = await answerQuestion(message, logEvent);
 
     res.json({ answer: result.answer });
   } catch (err) {
