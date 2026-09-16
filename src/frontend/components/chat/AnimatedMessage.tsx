@@ -16,9 +16,9 @@ export function AnimatedMessage({
   return (
     <motion.div
       className="relative"
-      initial={waterfall ? { opacity: 0, y: 14, filter: "blur(10px)" } : { opacity: 0 }}
+      initial={waterfall ? { opacity: 0, y: 14, filter: "blur(10px)" } : false}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: waterfall ? 0.55 : 0.25, ease: EASE, delay }}
+      transition={{ duration: 0.55, ease: EASE, delay }}
     >
       {waterfall ? (
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">

@@ -1,6 +1,5 @@
-import { Array as Arr, Data, Match, String as Str } from "effect";
+import { Data, Match, String as Str } from "effect";
 import type { ReactElement } from "react";
-import LoadingState from "@/frontend/components/primitives/LoadingState";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import type { ResearchUIMessage } from "@/shared/chat";
 import { answerText, isStreaming, traceRows } from "./message-parts.ts";
@@ -37,22 +36,19 @@ export function AssistantReply({
     Match.when({ settled: true }, () => Reply.OutOfSteps()),
     Match.orElse(() => Reply.Pending()),
   );
-  const trace = Arr.match(traceRows(message), {
-    onEmpty: () => (working ? <LoadingState label="Thinking" /> : null),
-    onNonEmpty: (rows) => {
-      const sources = rows.filter((row) => row.kind === "action").length;
-      return (
-        <ThinkingState
-          variant="Coding"
-          rows={Array.from(rows)}
-          active="Thinking"
-          done={sources === 0 ? "Thought it through" : `Thought it through · ${sources} ${sources === 1 ? "source" : "sources"}`}
-          working={working}
-          settled={settled}
-        />
-      );
-    },
-  });
+  const rows = traceRows(message);
+  const sources = rows.filter((row) => row.kind === "action").length;
+  const trace =
+    rows.length === 0 && !working ? null : (
+      <ThinkingState
+        variant="Coding"
+        rows={rows}
+        active="Thinking"
+        done={sources === 0 ? "Thought it through" : `Thought it through · ${sources} ${sources === 1 ? "source" : "sources"}`}
+        working={working}
+        settled={settled}
+      />
+    );
 
   return (
     <div className="flex w-full flex-col gap-3">
