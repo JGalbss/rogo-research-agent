@@ -1,11 +1,10 @@
-import type { ModelMessage, ToolLoopAgent, ToolSet } from "ai";
+import type { ToolLoopAgent, ToolSet } from "ai";
 import { Option } from "effect";
 import { AgentEvent } from "./events.ts";
 
 export interface ToolLoopOutcome {
-  readonly draft: Option.Option<string>;
+  readonly answer: Option.Option<string>;
   readonly steps: number;
-  readonly transcript: ReadonlyArray<ModelMessage>;
 }
 
 export class BaseAgent<TOOLS extends ToolSet> {
@@ -34,9 +33,8 @@ export class BaseAgent<TOOLS extends ToolSet> {
     });
 
     return {
-      draft: Option.liftPredicate(result.text, () => result.toolCalls.length === 0),
+      answer: Option.liftPredicate(result.text, () => result.toolCalls.length === 0),
       steps: result.steps.length,
-      transcript: [{ role: "user", content: question }, ...result.responseMessages],
     };
   }
 }
