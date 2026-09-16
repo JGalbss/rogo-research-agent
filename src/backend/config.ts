@@ -10,6 +10,7 @@ const AppConfig = Config.all({
   maxSteps: Config.Int("MAX_STEPS").pipe(Config.withDefault(12)),
   maxOutputTokens: Config.Int("MAX_OUTPUT_TOKENS").pipe(Config.withDefault(16000)),
   port: Config.Port("PORT").pipe(Config.withDefault(8787)),
+  durableStreamsPort: Config.Port("DURABLE_STREAMS_PORT").pipe(Config.withDefault(4437)),
 });
 
 export type AppConfig = Effect.Success<typeof AppConfig>;

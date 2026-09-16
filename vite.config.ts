@@ -10,6 +10,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: { "/api": "http://localhost:8787" },
+    proxy: {
+      "/api": "http://localhost:8787",
+      "/streams": {
+        target: "http://127.0.0.1:4437",
+        rewrite: (path) => path.replace(/^\/streams/, ""),
+      },
+    },
   },
 });

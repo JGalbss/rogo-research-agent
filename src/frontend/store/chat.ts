@@ -1,7 +1,8 @@
 import { Chat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { createDurableChatTransport } from "@durable-streams/aisdk-transport";
 import type { ResearchUIMessage } from "@/shared/chat";
 
 export const chat = new Chat<ResearchUIMessage>({
-  transport: new DefaultChatTransport({ api: "/api/chat" }),
+  id: "research",
+  transport: createDurableChatTransport<ResearchUIMessage>({ api: "/api/chat" }),
 });

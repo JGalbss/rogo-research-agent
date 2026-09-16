@@ -8,7 +8,7 @@ import { ExamplePrompts } from "./ExamplePrompts.tsx";
 import { MessageBubble } from "./MessageBubble.tsx";
 
 export function Chat(): ReactElement {
-  const { messages, sendMessage, status, error } = useChat({ chat });
+  const { messages, sendMessage, status, error } = useChat({ chat, resume: true });
   const view = classifyChatView({ status, messageCount: messages.length, error });
   const settled = acceptsInput(view);
 
