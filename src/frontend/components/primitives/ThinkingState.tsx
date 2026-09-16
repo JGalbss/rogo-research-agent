@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Streamdown } from "streamdown";
+import { edgeFade } from "@/frontend/utils/edge-fade";
 
 /* ─────────────────────────────────────────────────────────
  * THINKING — expandable agent trace, four variants
@@ -253,10 +255,9 @@ export default function ThinkingState({
                 )}
                 <span className={`min-w-0 truncate text-[12.5px] ${row.kind === "thought" || (row.kind === undefined && variant === "Reasoning") ? "whitespace-normal leading-relaxed text-ink-2" : "font-medium text-ink"} ${variant === "Search" ? "animated-underline" : ""}`}>
                   {row.streaming ? (
-                    <>
-                      {row.primary.slice(0, Math.max(0, row.primary.length - 10))}
-                      <span className="stream-tail">{row.primary.slice(Math.max(0, row.primary.length - 10))}</span>
-                    </>
+                    <Streamdown mode="streaming" animated={edgeFade} controls={false} className="contents">
+                      {row.primary}
+                    </Streamdown>
                   ) : (
                     row.primary
                   )}

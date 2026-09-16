@@ -1,14 +1,7 @@
 import type { ReactElement } from "react";
 import { type Components, Streamdown } from "streamdown";
 import { useSmoothedText } from "@/frontend/hooks/use-smoothed-text";
-
-const edgeFade = {
-  animation: "fadeIn",
-  duration: 320,
-  easing: "cubic-bezier(0.23, 1, 0.32, 1)",
-  sep: "word",
-  stagger: 0,
-} as const;
+import { edgeFade } from "@/frontend/utils/edge-fade";
 
 const components: Components = {
   table: ({ children }) => (
