@@ -1,9 +1,8 @@
-import { useChat } from "@ai-sdk/react";
 import { Array as Arr, Option } from "effect";
 import { AnimatePresence, motion } from "motion/react";
-import { type ReactElement, useRef, useState } from "react";
+import { type ReactElement, useRef } from "react";
 import { useFollowBottom } from "@/frontend/hooks/use-follow-bottom";
-import { useChatInstance } from "@/frontend/hooks/use-chat-instance";
+import { useResearchChat } from "@/frontend/hooks/use-research-chat";
 import type { ChatEntry } from "@/frontend/store/chats";
 import { classifyChatView, viewTraits } from "./chat-view.tsx";
 import { ExamplePrompts } from "./ExamplePrompts.tsx";
@@ -18,12 +17,7 @@ export function Chat({
   entry: ChatEntry;
   onAsk: (text: string) => void;
 }): ReactElement {
-  const chat = useChatInstance(entry);
-
-  const [resume] = useState(
-    () => Option.isSome(entry.generation) && chat.status === "ready",
-  );
-  const { messages, status, error } = useChat({ chat, resume });
+  const { messages, status, error } = useResearchChat(entry);
   const traits = viewTraits(
     classifyChatView({
       status,

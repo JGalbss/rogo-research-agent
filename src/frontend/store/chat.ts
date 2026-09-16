@@ -10,6 +10,11 @@ const chats = MutableHashMap.empty<ChatId, Chat<ResearchUIMessage>>();
 const dedupe = (messages: ReadonlyArray<ResearchUIMessage>): ResearchUIMessage[] =>
   Arr.dedupeWith(messages, (a, b) => a.id === b.id);
 
+export interface ChatSession {
+  readonly chat: Chat<ResearchUIMessage>;
+  readonly resume: boolean;
+}
+
 export const chatFor = (entry: ChatEntry): Chat<ResearchUIMessage> =>
   Option.getOrElse(MutableHashMap.get(chats, entry.id), () => {
     const chat = new Chat<ResearchUIMessage>({
@@ -29,4 +34,9 @@ export const reseedChat = (chat: Chat<ResearchUIMessage>, entry: ChatEntry): voi
   const next = dedupe(entry.messages);
   if (sameSequence(next, chat.messages)) return;
   chat.messages = next;
+};
+
+export const openChat = (entry: ChatEntry): ChatSession => {
+  const chat = chatFor(entry);
+  return { chat, resume: Option.isSome(entry.generation) && chat.status === "ready" };
 };
