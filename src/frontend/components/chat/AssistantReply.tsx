@@ -2,7 +2,8 @@ import { Data, Match, String as Str } from "effect";
 import type { ReactElement } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import type { ResearchUIMessage } from "@/shared/chat";
-import { answerText, isStreaming, traceRows } from "./message-parts.ts";
+import { useSmoothedText } from "@/frontend/hooks/use-smoothed-text";
+import { answerText, isStreaming, traceRows, type TraceRow } from "./message-parts.ts";
 import { Prose } from "./Prose.tsx";
 
 const OUT_OF_STEPS_ANSWER =
@@ -36,7 +37,14 @@ export function AssistantReply({
     Match.when({ settled: true }, () => Reply.OutOfSteps()),
     Match.orElse(() => Reply.Pending()),
   );
-  const rows = traceRows(message);
+  const settledRows = traceRows(message);
+  const last = settledRows.at(-1);
+  const liveThought = working && last !== undefined && last.kind === "thought" ? last : undefined;
+  const shownThought = useSmoothedText(liveThought?.primary ?? "", liveThought === undefined ? "instant" : "live");
+  const rows =
+    liveThought === undefined
+      ? settledRows
+      : [...settledRows.slice(0, -1), { ...liveThought, primary: shownThought, streaming: true }];
   const sources = rows.filter((row) => row.kind === "action").length;
   const trace =
     rows.length === 0 && !working ? null : (

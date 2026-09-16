@@ -12,6 +12,7 @@ export type TraceRow = {
   primary: string;
   secondary?: string;
   mono?: boolean;
+  streaming?: boolean;
 };
 
 export const answerText = (message: ResearchUIMessage): string =>

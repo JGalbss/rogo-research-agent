@@ -30,6 +30,8 @@ type Row = {
   key?: string;
   /** thought rows read as prose; action rows read as a labeled step */
   kind?: "thought" | "action";
+  /** the row is still being written; its last characters get the stream tail */
+  streaming?: boolean;
   primary: string;
   secondary?: string;
   mono?: boolean;
@@ -243,7 +245,14 @@ export default function ThinkingState({
                   )
                 )}
                 <span className={`min-w-0 truncate text-[12.5px] ${row.kind === "thought" || (row.kind === undefined && variant === "Reasoning") ? "whitespace-normal leading-relaxed text-ink-2" : "font-medium text-ink"} ${variant === "Search" ? "animated-underline" : ""}`}>
-                  {row.primary}
+                  {row.streaming ? (
+                    <>
+                      {row.primary.slice(0, Math.max(0, row.primary.length - 10))}
+                      <span className="stream-tail">{row.primary.slice(Math.max(0, row.primary.length - 10))}</span>
+                    </>
+                  ) : (
+                    row.primary
+                  )}
                 </span>
                 {row.secondary && (
                   <span className={`shrink-0 text-[11.5px] text-ink-3 ${row.mono ? "font-mono" : ""}`}>
