@@ -7,7 +7,9 @@ import type { ResearchUIMessage } from "../../shared/chat.ts";
 import { AppConfig } from "../config.ts";
 import { BaseAgent } from "./base-agent.ts";
 import { logAgentEvent } from "./events.ts";
+import { memoizeToolCalls } from "./memo.ts";
 import { promptCache, researchInstructions, visibleReasoning } from "./prompts/research.ts";
+import { StepPlan, answerWithinBudget } from "./stop.ts";
 import { researchTools } from "./tools/index.ts";
 
 export class ResearchError extends Data.TaggedError("ResearchError")<{
@@ -25,33 +27,54 @@ export class Researcher extends Context.Service<
   }
 >()("Researcher") {}
 
+const logPlan = StepPlan.$match({
+  Research: () => Effect.void,
+  Answer: ({ reason }) => Effect.logInfo("answering now", { reason }),
+});
+
 export const ResearcherLive: Layer.Layer<Researcher, never, AppConfig> = Layer.effect(
   Researcher,
   Effect.gen(function* () {
     const config = yield* AppConfig;
     const anthropic = createAnthropic({ apiKey: Redacted.value(config.anthropicApiKey) });
-    const agent = new BaseAgent(
-      new ToolLoopAgent({
-        model: anthropic(config.model),
-        instructions: researchInstructions,
-        tools: researchTools,
-        stopWhen: stepCountIs(config.maxSteps),
-        maxOutputTokens: config.maxOutputTokens,
-        providerOptions: {
-          anthropic: { ...promptCache.anthropic, ...visibleReasoning.anthropic },
-        },
-      }),
-    );
+    const budget = {
+      maxSteps: config.maxSteps,
+      answerByMs: config.answerByMs,
+      abortAfterMs: config.abortAfterMs,
+    };
 
     const answer = (messages: ReadonlyArray<ResearchUIMessage>) =>
       Stream.unwrap(
         Effect.gen(function* () {
           const events = yield* Queue.make<AgentEvent>();
+          const plans = yield* Queue.make<StepPlan>();
+          const abort = new AbortController();
+          yield* Effect.addFinalizer(() => Effect.sync(() => abort.abort()));
+
+          const agent = new BaseAgent(
+            new ToolLoopAgent({
+              model: anthropic(config.model),
+              instructions: researchInstructions,
+              tools: memoizeToolCalls(researchTools),
+              stopWhen: stepCountIs(budget.maxSteps),
+              prepareStep: answerWithinBudget(budget, (plan) => Queue.offerUnsafe(plans, plan)),
+              maxOutputTokens: config.maxOutputTokens,
+              providerOptions: {
+                anthropic: { ...promptCache.anthropic, ...visibleReasoning.anthropic },
+              },
+            }),
+          );
+
           const modelMessages = yield* Effect.promise(() =>
             convertToModelMessages(Array.from(messages)),
           );
           const result = yield* Effect.promise(() =>
-            agent.stream(modelMessages, (event) => Queue.offerUnsafe(events, event)),
+            agent.stream({
+              messages: modelMessages,
+              onEvent: (event) => Queue.offerUnsafe(events, event),
+              abortSignal: abort.signal,
+              timeoutMs: budget.abortAfterMs,
+            }),
           );
 
           const reply = Stream.fromAsyncIterable(
@@ -62,8 +85,12 @@ export const ResearcherLive: Layer.Layer<Researcher, never, AppConfig> = Layer.e
             Stream.tap(logAgentEvent),
             Stream.map((event): ResearchChunk => ({ type: "data-agent-event", data: event })),
           );
+          const planning = Stream.fromQueue(plans).pipe(Stream.tap(logPlan), Stream.drain);
 
-          return reply.pipe(Stream.merge(progress, { haltStrategy: "left" }));
+          return reply.pipe(
+            Stream.merge(progress, { haltStrategy: "left" }),
+            Stream.merge(planning, { haltStrategy: "left" }),
+          );
         }),
       );
 

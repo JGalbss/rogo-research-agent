@@ -8,6 +8,8 @@ const settings = Config.all({
   model: Config.String("ROGO_MODEL").pipe(Config.withDefault("claude-sonnet-5")),
   maxSteps: Config.Int("MAX_STEPS").pipe(Config.withDefault(12)),
   maxOutputTokens: Config.Int("MAX_OUTPUT_TOKENS").pipe(Config.withDefault(16000)),
+  answerByMs: Config.Int("ANSWER_BY_MS").pipe(Config.withDefault(45_000)),
+  abortAfterMs: Config.Int("ABORT_AFTER_MS").pipe(Config.withDefault(90_000)),
   port: Config.Port("PORT").pipe(Config.withDefault(8787)),
   durableStreamsPort: Config.Port("DURABLE_STREAMS_PORT").pipe(Config.withDefault(4437)),
 });
