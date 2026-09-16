@@ -1,4 +1,3 @@
 @import "./beautifui/foundation.css";
 @import "./beautifui/records-table.css";
 @import "./beautifui/sidebar-nav.css";
-@source "../../node_modules/streamdown/dist/*.js";

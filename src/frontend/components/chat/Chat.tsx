@@ -8,8 +8,15 @@ import { ExamplePrompts } from "./ExamplePrompts.tsx";
 import { MessageBubble } from "./MessageBubble.tsx";
 
 export function Chat(): ReactElement {
-  const { messages, sendMessage, status, error } = useChat({ chat, resume: true });
-  const view = classifyChatView({ status, messageCount: messages.length, error });
+  const { messages, sendMessage, status, error } = useChat({
+    chat,
+    resume: true,
+  });
+  const view = classifyChatView({
+    status,
+    messageCount: messages.length,
+    error,
+  });
   const settled = acceptsInput(view);
 
   const send = (text: string) => {
@@ -34,10 +41,15 @@ export function Chat(): ReactElement {
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} settled={settled} />
         ))}
+
         {viewSlot}
       </div>
       <div className="sticky bottom-0 bg-page pt-2">
-        <PromptBar demo={false} placeholder="Ask a research question…" onSend={send} />
+        <PromptBar
+          demo={false}
+          placeholder="Ask a research question…"
+          onSend={send}
+        />
       </div>
     </>
   );
