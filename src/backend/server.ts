@@ -1,65 +1,165 @@
-import { toDurableStreamResponse } from "@durable-streams/aisdk-transport";
-import express, { type Request, type Response } from "express";
-import { convertToModelMessages, createUIMessageStream, generateId, validateUIMessages } from "ai";
-import { Effect, Option } from "effect";
-import { AgentEvent } from "../shared/agent-event.ts";
-import type { ResearchUIMessage } from "../shared/chat.ts";
-import { researcher } from "./agent/research-agent.ts";
-import { config } from "./config.ts";
-import { activeStream, clearActive, durableStreams, markActive, streamTarget } from "./streams.ts";
+import express, { type Request as HttpRequest, type Response as HttpResponse } from "express";
+import { createUIMessageStream, generateId } from "ai";
+import { Data, Effect, Option, Schema, Stream } from "effect";
+import { ChatId, ChatMessage, type ResearchUIMessage } from "../shared/chat.ts";
+import { Researcher } from "./agent/research-agent.ts";
+import { ChatIndex } from "./chat-index.ts";
+import { ChatStore, newChat } from "./chat-store.ts";
+import { AppConfig } from "./config.ts";
+import { DurableStreams } from "./streams.ts";
 import { runtime } from "./utils/runtime.ts";
+
+const ChatRequest = Schema.Struct({
+  id: ChatId,
+  messages: Schema.Array(ChatMessage),
+});
+
+class InvalidChatRequest extends Data.TaggedError("InvalidChatRequest")<{
+  readonly cause: unknown;
+}> {}
+
+type Services = Researcher | ChatStore | ChatIndex | DurableStreams;
+
+const turn = (
+  request: typeof ChatRequest.Type,
+): Effect.Effect<Response, never, Services> =>
+  Effect.gen(function* () {
+    const researcher = yield* Researcher;
+    const store = yield* ChatStore;
+    const index = yield* ChatIndex;
+    const streams = yield* DurableStreams;
+    const run = Effect.runPromiseWith(yield* Effect.context());
+
+    const messages: ResearchUIMessage[] = Array.from(request.messages);
+    const chat = yield* store.get(request.id).pipe(
+      Effect.flatMap(
+        Option.match({ onNone: () => newChat(request.id), onSome: Effect.succeed }),
+      ),
+    );
+    yield* store.put({ ...chat, messages });
+
+    const streamId = generateId();
+    const target = streams.target(request.id, streamId);
+    const readUrl = String(target.readUrl);
+
+    const source = createUIMessageStream<ResearchUIMessage>({
+      originalMessages: messages,
+      execute: ({ writer }) =>
+        run(
+          Stream.runForEach(researcher.answer(messages), (chunk) =>
+            Effect.sync(() => writer.write(chunk)),
+          ),
+        ),
+      onFinish: ({ messages: final }) =>
+        run(
+          Effect.gen(function* () {
+            yield* store.put({ ...chat, messages: final });
+            streams.clearActive(request.id);
+            yield* index.emit({ _tag: "GenerationFinished", chatId: request.id, streamId });
+          }),
+        ),
+      onError: (error) => String(error),
+    });
+
+    streams.markActive(request.id, readUrl);
+    yield* index.emit({ _tag: "GenerationStarted", chatId: request.id, streamId, readUrl });
+    yield* Effect.logInfo("chat", { chatId: request.id, messages: messages.length, streamId });
+
+    return yield* streams.publish(target, source);
+  }).pipe(Effect.orDie);
+
+const respond = (res: HttpResponse, route: Effect.Effect<void, never, Services>): void => {
+  runtime.runFork(
+    route.pipe(
+      Effect.catchCause((cause) =>
+        Effect.gen(function* () {
+          yield* Effect.logError("request failed", cause);
+          if (res.headersSent) return;
+          res.status(500).json({ error: "internal error" });
+        }),
+      ),
+    ),
+  );
+};
 
 const app = express();
 app.use(express.json());
 
-const logEvent = AgentEvent.$match({
-  Iteration: ({ n }) => Effect.logInfo("iteration", { n }),
-  ToolStart: ({ name, input }) => Effect.logInfo("tool start", { name, input }),
-  ToolEnd: ({ name, ms }) => Effect.logInfo("tool end", { name, ms }),
-  ToolFailed: ({ name, message }) => Effect.logWarning("tool failed", { name, message }),
+app.post("/api/chat", (req: HttpRequest, res: HttpResponse) => {
+  respond(
+    res,
+    Effect.gen(function* () {
+      const request = yield* Schema.decodeUnknownEffect(ChatRequest)(req.body).pipe(
+        Effect.mapError((cause) => new InvalidChatRequest({ cause })),
+      );
+      const pointer = yield* turn(request);
+      const body = yield* Effect.promise(() => pointer.text());
+      pointer.headers.forEach((value, name) => res.setHeader(name, value));
+      res.status(pointer.status).send(body);
+    }).pipe(
+      Effect.catchTag("InvalidChatRequest", (error) =>
+        Effect.logWarning("invalid chat request", error.cause).pipe(
+          Effect.map(() => {
+            res.status(400).json({ error: "expected { id, messages }" });
+          }),
+        ),
+      ),
+    ),
+  );
 });
 
-app.post("/api/chat", async (req: Request, res: Response) => {
-  const chatId = String(req.body.id ?? "research");
-  const messages = await validateUIMessages<ResearchUIMessage>({ messages: req.body.messages });
-  runtime.runSync(Effect.logInfo("chat", { chatId, messages: messages.length }));
+app.get("/api/chats", (_req: HttpRequest, res: HttpResponse) => {
+  respond(
+    res,
+    Effect.gen(function* () {
+      const store = yield* ChatStore;
+      const chats = yield* store.list.pipe(Effect.orDie);
+      res.json(chats);
+    }),
+  );
+});
 
-  const stream = createUIMessageStream<ResearchUIMessage>({
-    originalMessages: messages,
-    execute: async ({ writer }) => {
-      const result = await researcher.stream(await convertToModelMessages(messages), (event) => {
-        runtime.runSync(logEvent(event));
-        writer.write({ type: "data-agent-event", data: event });
+app.get("/api/chat/:id", (req: HttpRequest, res: HttpResponse) => {
+  respond(
+    res,
+    Effect.gen(function* () {
+      const store = yield* ChatStore;
+      const id = yield* Schema.decodeUnknownEffect(ChatId)(req.params.id).pipe(Effect.option);
+      const chat = yield* Option.match(id, {
+        onNone: () => Effect.succeed(Option.none()),
+        onSome: (chatId) => store.get(chatId).pipe(Effect.orDie),
       });
-      writer.merge(result.toUIMessageStream({ sendReasoning: true, sendSources: true }));
-    },
-    onFinish: () => clearActive(chatId),
-    onError: (error) => {
-      runtime.runSync(Effect.logError("chat failed", error));
-      return String(error);
-    },
-  });
-
-  const target = streamTarget(chatId, generateId());
-  markActive(chatId, String(target.readUrl));
-  const pointer = await toDurableStreamResponse({ source: stream, stream: target });
-  pointer.headers.forEach((value, name) => res.setHeader(name, value));
-  res.status(pointer.status).send(await pointer.text());
+      Option.match(chat, {
+        onNone: () => res.sendStatus(404),
+        onSome: (found) => res.json(found),
+      });
+    }),
+  );
 });
 
-app.get("/api/chat/:id/stream", (req: Request, res: Response) => {
-  Option.match(activeStream(String(req.params.id)), {
-    onNone: () => res.sendStatus(204),
-    onSome: (streamUrl) => res.status(200).location(streamUrl).json({ streamUrl }),
-  });
+app.get("/api/chat/:id/stream", (req: HttpRequest, res: HttpResponse) => {
+  respond(
+    res,
+    Effect.gen(function* () {
+      const streams = yield* DurableStreams;
+      Option.match(streams.activeStream(String(req.params.id)), {
+        onNone: () => res.sendStatus(204),
+        onSome: (streamUrl) => res.status(200).location(streamUrl).json({ streamUrl }),
+      });
+    }),
+  );
 });
 
 const boot = Effect.gen(function* () {
-  const streamsUrl = yield* Effect.promise(() => durableStreams.start());
-  yield* Effect.logInfo("durable streams", { url: streamsUrl });
-  app.listen(config.port, () => {
-    runtime.runSync(Effect.logInfo("listening", { url: `http://localhost:${config.port}` }));
+  const config = yield* AppConfig;
+  yield* DurableStreams;
+  yield* Effect.callback<void>((resume) => {
+    app.listen(config.port, () => resume(Effect.void));
   });
+  yield* Effect.logInfo("listening", { url: `http://localhost:${config.port}` });
 });
 
 runtime.runPromise(boot);
+process.once("SIGINT", () => {
+  runtime.dispose().then(() => process.exit(0));
+});

@@ -1,10 +1,9 @@
 import { config as loadDotenv } from "dotenv";
-import { Config, Effect } from "effect";
-import { runtime } from "./utils/runtime.ts";
+import { Config, Context, Effect, Layer } from "effect";
 
 loadDotenv();
 
-const AppConfig = Config.all({
+const settings = Config.all({
   anthropicApiKey: Config.Redacted("ANTHROPIC_API_KEY"),
   model: Config.String("ROGO_MODEL").pipe(Config.withDefault("claude-sonnet-5")),
   maxSteps: Config.Int("MAX_STEPS").pipe(Config.withDefault(12)),
@@ -13,10 +12,13 @@ const AppConfig = Config.all({
   durableStreamsPort: Config.Port("DURABLE_STREAMS_PORT").pipe(Config.withDefault(4437)),
 });
 
-export type AppConfig = Effect.Success<typeof AppConfig>;
+export class AppConfig extends Context.Service<AppConfig, Effect.Success<typeof settings>>()(
+  "AppConfig",
+) {}
 
-export const config: AppConfig = runtime.runSync(
-  AppConfig.pipe(
+export const AppConfigLive: Layer.Layer<AppConfig, Config.ConfigError> = Layer.effect(
+  AppConfig,
+  settings.pipe(
     Effect.tapError(() =>
       Effect.logError("invalid configuration. Copy .env.example to .env and set ANTHROPIC_API_KEY."),
     ),
