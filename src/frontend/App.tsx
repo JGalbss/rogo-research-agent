@@ -1,4 +1,3 @@
-import { generateId } from "ai";
 import { Array as Arr, Option } from "effect";
 import { SidebarExpand } from "iconoir-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -9,7 +8,7 @@ import SidebarNav from "@/frontend/components/primitives/SidebarNav";
 import { chatFor } from "@/frontend/store/chat";
 import { type ChatEntry, emptyEntry, useChats } from "@/frontend/store/chats";
 import { parseQuestion } from "@/frontend/store/question";
-import type { ChatId } from "@/shared/chat";
+import { selectChat, startNewChat, useSelectedChat } from "@/frontend/store/selection";
 
 const EASE: [number, number, number, number] = [0.23, 1, 0.32, 1];
 
@@ -23,7 +22,7 @@ const ask = (entry: ChatEntry, text: string): void => {
 
 export function App(): ReactElement {
   const chats = useChats();
-  const [selected, setSelected] = useState<ChatId>(generateId);
+  const selected = useSelectedChat();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const entry = Option.getOrElse(
     Arr.findFirst(chats, (chat) => chat.id === selected),
@@ -37,8 +36,8 @@ export function App(): ReactElement {
         fill
         recents={recents}
         activeTitle={entry.title}
-        onNewChat={() => setSelected(generateId())}
-        onPick={(id) => setSelected(id)}
+        onNewChat={startNewChat}
+        onPick={selectChat}
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
