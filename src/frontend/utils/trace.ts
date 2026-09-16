@@ -1,6 +1,9 @@
 import { getToolName, isToolUIPart } from "ai";
+import type { ToolUIPart } from "ai";
 import { Array as Arr, HashMap, Match, Option, pipe, Schema, String as Str } from "effect";
 import type { ResearchUIMessage } from "@/shared/chat";
+
+export type ToolOutcome = "pending" | "ok" | "failed";
 
 export type TraceRow = {
   key: string;
@@ -8,7 +11,7 @@ export type TraceRow = {
   primary: string;
   secondary?: string;
   streaming?: boolean;
-  complete?: boolean;
+  outcome?: ToolOutcome;
 };
 
 const TOOL_LABELS = HashMap.make(
@@ -17,6 +20,11 @@ const TOOL_LABELS = HashMap.make(
   ["getFinancials", "Pulled financials"],
   ["searchDocuments", "Searched documents"],
 );
+
+const TOOL_OUTCOMES: Partial<Record<ToolUIPart["state"], ToolOutcome>> = {
+  "output-available": "ok",
+  "output-error": "failed",
+};
 
 const Subject = Schema.Struct({
   company: Schema.optionalKey(Schema.String),
@@ -27,32 +35,22 @@ export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
   Arr.flatMap(message.parts, (part, index) =>
     Match.value(part).pipe(
       Match.when({ type: "reasoning" }, ({ text }) =>
-        pipe(
-          text.split(/\n\s*\n/),
-          Arr.map(Str.trim),
-          Arr.filter(Str.isNonEmpty),
-          Arr.map((primary, paragraph): TraceRow => ({
-            key: `thought-${index}-${paragraph}`,
-            kind: "thought",
-            primary,
-          })),
-        ),
+        text
+          .split(/\n\s*\n/)
+          .map(Str.trim)
+          .filter(Str.isNonEmpty)
+          .map((primary, paragraph): TraceRow => ({ key: `thought-${index}-${paragraph}`, kind: "thought", primary })),
       ),
       Match.when(isToolUIPart, (tool): TraceRow[] => [
         {
           key: tool.toolCallId,
           kind: "action",
-          complete: tool.state === "output-available" || tool.state === "output-error",
           primary: Option.getOrElse(HashMap.get(TOOL_LABELS, getToolName(tool)), () => getToolName(tool)),
-          secondary: Match.value(tool).pipe(
-            Match.when({ state: "output-error" }, ({ errorText }) => `failed: ${errorText ?? "unknown"}`),
-            Match.orElse(({ input }) =>
-              Schema.decodeUnknownOption(Subject)(input).pipe(
-                Option.flatMap((fields) => Option.fromNullishOr(fields.company ?? fields.query)),
-                Option.getOrElse(() => ""),
-              ),
-            ),
+          secondary: Schema.decodeUnknownOption(Subject)(tool.input).pipe(
+            Option.flatMap((fields) => Option.fromNullishOr(fields.company ?? fields.query)),
+            Option.getOrElse(() => ""),
           ),
+          outcome: TOOL_OUTCOMES[tool.state] ?? "pending",
         },
       ]),
       Match.orElse(() => []),
@@ -62,19 +60,24 @@ export const traceRows = (message: ResearchUIMessage): TraceRow[] =>
 export const traceHeadline = (rows: ReadonlyArray<TraceRow>): string =>
   Option.match(Arr.last(rows), {
     onNone: () => "Thinking",
-    onSome: (row) =>
-      Match.value(row).pipe(
-        Match.when({ kind: "action", complete: true }, () => "Thinking"),
-        Match.when({ secondary: Match.nonEmptyString }, ({ primary, secondary }) => `${primary} · ${secondary}`),
-        Match.orElse(({ primary }) => primary),
-      ),
+    onSome: Match.type<TraceRow>().pipe(
+      Match.when({ outcome: Match.is("ok", "failed") }, () => "Thinking"),
+      Match.when({ secondary: Match.nonEmptyString }, ({ primary, secondary }) => `${primary} · ${secondary}`),
+      Match.orElse(({ primary }) => primary),
+    ),
   });
 
-export const traceSubjects = (rows: ReadonlyArray<TraceRow>): string[] =>
-  Arr.dedupe(rows.flatMap((row) => (row.kind === "action" && row.secondary ? [row.secondary] : [])));
+export const traceSources = (rows: ReadonlyArray<TraceRow>): string[] =>
+  pipe(
+    rows,
+    Arr.filter((row) => row.outcome === "ok"),
+    Arr.map((row) => row.secondary ?? ""),
+    Arr.filter(Str.isNonEmpty),
+    Arr.dedupe,
+  );
 
 export const traceSummary = (rows: ReadonlyArray<TraceRow>): string =>
-  Match.value(rows.filter((row) => row.kind === "action").length).pipe(
+  Match.value(Arr.filter(rows, (row) => row.kind === "action").length).pipe(
     Match.when(0, () => "Thought it through"),
     Match.when(1, () => "Thought it through · 1 source"),
     Match.orElse((count) => `Thought it through · ${count} sources`),

@@ -1,6 +1,6 @@
 import { Array as Arr, Data, Match, pipe, String as Str } from "effect";
 import type { ResearchUIMessage } from "@/shared/chat";
-import { type TraceRow, traceRows } from "./trace.ts";
+import { type TraceRow, traceRows } from "@/frontend/utils/trace";
 
 export type TurnPhase = "live" | "settled";
 

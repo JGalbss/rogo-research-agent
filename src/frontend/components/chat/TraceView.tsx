@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
-import { Reply, type TurnPhase } from "./reply.ts";
+import { Reply, type TurnPhase } from "@/frontend/utils/reply";
 import { SourcePills } from "./SourcePills.tsx";
-import { type TraceRow, traceHeadline, traceSubjects, traceSummary } from "./trace.ts";
+import { type TraceRow, traceHeadline, traceSources, traceSummary } from "@/frontend/utils/trace";
 
 export function TraceView({
   rows,
@@ -23,7 +23,7 @@ export function TraceView({
       done={traceSummary(rows)}
       working={working}
       settled={turn === "settled"}
-      trailing={<SourcePills subjects={traceSubjects(rows)} />}
+      trailing={<SourcePills subjects={traceSources(rows)} />}
     />
   );
 }

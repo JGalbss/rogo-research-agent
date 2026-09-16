@@ -1,6 +1,6 @@
 import { Array as Arr, Option } from "effect";
-import { Reply } from "@/frontend/components/chat/reply";
-import type { TraceRow } from "@/frontend/components/chat/trace";
+import { Reply } from "@/frontend/utils/reply";
+import type { TraceRow } from "@/frontend/utils/trace";
 import { useSmoothedText } from "./use-smoothed-text.ts";
 
 export const useLiveTrace = (reply: Reply): TraceRow[] => {

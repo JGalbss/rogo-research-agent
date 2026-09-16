@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useLiveTrace } from "@/frontend/hooks/use-live-trace";
 import type { ResearchUIMessage } from "@/shared/chat";
 import { Prose } from "./Prose.tsx";
-import { Reply, type TurnPhase, classifyReply } from "./reply.ts";
+import { Reply, type TurnPhase, classifyReply } from "@/frontend/utils/reply";
 import { TraceView } from "./TraceView.tsx";
 
 const OUT_OF_STEPS_ANSWER =
