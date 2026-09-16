@@ -1,5 +1,5 @@
 import type { InferUITools, UIMessage } from "ai";
-import { Schema } from "effect";
+import { Array as Arr, Option, Schema, pipe } from "effect";
 import type { AgentEvent } from "./agent-event.ts";
 import type { researchTools } from "../backend/agent/tools/index.ts";
 
@@ -40,3 +40,17 @@ export const ChatSummary = Schema.Struct({
   createdAt: Schema.String,
 });
 export type ChatSummary = typeof ChatSummary.Type;
+
+const TITLE_LENGTH = 40;
+
+export const chatTitle = (messages: ReadonlyArray<ResearchUIMessage>): string =>
+  pipe(
+    messages,
+    Arr.findFirst((message) => message.role === "user"),
+    Option.map((message) =>
+      message.parts.flatMap((part) => (part.type === "text" ? [part.text] : [])).join(" "),
+    ),
+    Option.filter((text) => text.length > 0),
+    Option.map((text) => (text.length <= TITLE_LENGTH ? text : `${text.slice(0, TITLE_LENGTH)}…`)),
+    Option.getOrElse(() => "New chat"),
+  );

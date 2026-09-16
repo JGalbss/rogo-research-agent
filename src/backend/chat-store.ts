@@ -1,9 +1,9 @@
-import { Array as Arr, Context, Data, DateTime, Effect, Layer, Option, Schema, pipe } from "effect";
-import { mkdirSync } from "node:fs";
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { type Chat, ChatId, ChatMessage, type ChatSummary, type ResearchUIMessage } from "../shared/chat.ts";
+import { Array as Arr, type Config, Context, Data, DateTime, Effect, Layer, Option, Schema } from "effect";
+import { SqlClient, type SqlError, SqlSchema } from "effect/unstable/sql";
+import { type Chat, ChatId, type ChatSummary, chatTitle } from "../shared/chat.ts";
 import { ChatIndex, type ChatIndexError } from "./chat-index.ts";
+import { DatabaseLive } from "./db/database.ts";
+import { ChatRow } from "./db/schema.ts";
 
 export class ChatStoreError extends Data.TaggedError("ChatStoreError")<{
   readonly id: string;
@@ -21,100 +21,58 @@ export class ChatStore extends Context.Service<ChatStore, ChatStoreApi>()("ChatS
 export const newChat = (id: ChatId): Effect.Effect<Chat> =>
   DateTime.now.pipe(Effect.map((now) => ({ id, createdAt: DateTime.formatIso(now), messages: [] })));
 
-const TITLE_LENGTH = 40;
+const ChatStoreSql: Layer.Layer<ChatStore, never, SqlClient.SqlClient | ChatIndex> = Layer.effect(
+  ChatStore,
+  Effect.gen(function* () {
+    const sql = yield* SqlClient.SqlClient;
+    const index = yield* ChatIndex;
 
-export const chatTitle = (messages: ReadonlyArray<ResearchUIMessage>): string =>
-  pipe(
-    messages,
-    Arr.findFirst((message) => message.role === "user"),
-    Option.map((message) =>
-      message.parts.flatMap((part) => (part.type === "text" ? [part.text] : [])).join(" "),
-    ),
-    Option.filter((text) => text.length > 0),
-    Option.map((text) => (text.length <= TITLE_LENGTH ? text : `${text.slice(0, TITLE_LENGTH)}…`)),
-    Option.getOrElse(() => "New chat"),
-  );
+    const findChat = SqlSchema.findOneOption({
+      Request: ChatId,
+      Result: ChatRow,
+      execute: (id) => sql`select * from chats where id = ${id}`,
+    });
 
-const StoredMessages = Schema.fromJsonString(Schema.Array(ChatMessage));
+    const findChats = SqlSchema.findAll({
+      Request: Schema.Void,
+      Result: ChatRow,
+      execute: () => sql`select * from chats order by created_at desc`,
+    });
 
-const ChatRow = Schema.Struct({
-  id: ChatId,
-  created_at: Schema.String,
-  messages: StoredMessages,
-});
+    const get: ChatStoreApi["get"] = (id) =>
+      findChat(id).pipe(Effect.mapError((cause) => new ChatStoreError({ id, cause })));
 
-export const ChatStoreSqlite = (file: string): Layer.Layer<ChatStore, never, ChatIndex> =>
-  Layer.effect(
-    ChatStore,
-    Effect.gen(function* () {
-      const index = yield* ChatIndex;
-      const db = yield* Effect.acquireRelease(
-        Effect.sync(() => {
-          mkdirSync(path.dirname(file), { recursive: true });
-          const database = new DatabaseSync(file);
-          database.exec(
-            "create table if not exists chats (id text primary key, created_at text not null, messages text not null)",
-          );
-          return database;
-        }),
-        (database) => Effect.sync(() => database.close()),
-      );
-      const selectChat = db.prepare("select id, created_at, messages from chats where id = ?");
-      const selectAll = db.prepare("select id, created_at, messages from chats order by created_at desc");
-      const writeChat = db.prepare(
-        "insert into chats (id, created_at, messages) values (?, ?, ?) on conflict(id) do update set messages = excluded.messages",
-      );
-      const decodeRows = Schema.decodeUnknownEffect(Schema.Array(ChatRow));
-
-      const get: ChatStoreApi["get"] = (id) =>
-        Effect.try({
-          try: () => selectChat.all(id),
-          catch: (cause) => new ChatStoreError({ id, cause }),
-        }).pipe(
-          Effect.flatMap(decodeRows),
-          Effect.mapError((cause) => new ChatStoreError({ id, cause })),
-          Effect.map((rows) =>
-            Option.map(Arr.head(rows), (row): Chat => ({
-              id: row.id,
-              createdAt: row.created_at,
-              messages: row.messages,
-            })),
-          ),
-        );
-
-      const put: ChatStoreApi["put"] = (chat) =>
-        Effect.gen(function* () {
-          const previous = yield* get(chat.id);
-          const known = Option.match(previous, {
-            onNone: () => 0,
-            onSome: (existing) => existing.messages.length,
-          });
-          yield* Effect.try({
-            try: () =>
-              writeChat.run(chat.id, chat.createdAt, Schema.encodeSync(StoredMessages)(chat.messages)),
-            catch: (cause) => new ChatStoreError({ id: chat.id, cause }),
-          });
-          if (Option.isNone(previous)) {
-            yield* index.emit({ _tag: "ChatCreated", id: chat.id, createdAt: chat.createdAt });
-          }
-          yield* Effect.forEach(chat.messages.slice(known), (message) =>
-            index.emit({ _tag: "MessageAppended", chatId: chat.id, message }),
-          );
+    const put: ChatStoreApi["put"] = (chat) =>
+      Effect.gen(function* () {
+        const previous = yield* get(chat.id);
+        const known = Option.match(previous, {
+          onNone: () => 0,
+          onSome: (existing) => existing.messages.length,
         });
-
-      const list: ChatStoreApi["list"] = Effect.try({
-        try: () => selectAll.all(),
-        catch: (cause) => new ChatStoreError({ id: "*", cause }),
+        const row = yield* Schema.encodeEffect(ChatRow.insert)(chat);
+        yield* sql`insert into chats ${sql.insert(row)} on conflict(id) do update set messages = excluded.messages`;
+        if (Option.isNone(previous)) {
+          yield* index.emit({ _tag: "ChatCreated", id: chat.id, createdAt: chat.createdAt });
+        }
+        yield* Effect.forEach(chat.messages.slice(known), (message) =>
+          index.emit({ _tag: "MessageAppended", chatId: chat.id, message }),
+        );
       }).pipe(
-        Effect.flatMap(decodeRows),
-        Effect.mapError((cause) => new ChatStoreError({ id: "*", cause })),
-        Effect.map(
-          Arr.map((row) => ({ id: row.id, title: chatTitle(row.messages), createdAt: row.created_at })),
-        ),
+        Effect.catchTags({
+          SqlError: (cause) => new ChatStoreError({ id: chat.id, cause }),
+          SchemaError: (cause) => new ChatStoreError({ id: chat.id, cause }),
+        }),
       );
 
-      return { get, put, list };
-    }),
-  );
+    const list: ChatStoreApi["list"] = findChats(undefined).pipe(
+      Effect.map(Arr.map((row) => ({ id: row.id, title: chatTitle(row.messages), createdAt: row.createdAt }))),
+      Effect.mapError((cause) => new ChatStoreError({ id: "*", cause })),
+    );
 
-export const ChatStoreLive: Layer.Layer<ChatStore, never, ChatIndex> = ChatStoreSqlite(".data/chats.sqlite");
+    return { get, put, list };
+  }),
+);
+
+export const ChatStoreLive: Layer.Layer<ChatStore, Config.ConfigError | SqlError.SqlError, ChatIndex> = ChatStoreSql.pipe(
+  Layer.provide(DatabaseLive),
+);
