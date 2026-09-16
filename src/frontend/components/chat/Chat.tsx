@@ -29,7 +29,8 @@ export function Chat({
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  useFollowBottom(scrollRef, [messages, status]);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useFollowBottom(scrollRef, contentRef);
 
   return (
     <div
@@ -54,7 +55,7 @@ export function Chat({
         ) : null}
       </AnimatePresence>
 
-      <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 px-6 pt-10 pb-4">
+      <div ref={contentRef} className="mx-auto flex w-full max-w-[740px] flex-col gap-6 px-6 pt-10 pb-4">
         {messages.map((message, index) => (
           <MessageBubble
             key={message.id}

@@ -1,18 +1,37 @@
-import { type RefObject, useEffect, useRef } from "react";
+import { MutableRef } from "effect";
+import { type RefObject, useEffect } from "react";
 
-const FOLLOW_WITHIN_PX = 120;
+const AT_BOTTOM_PX = 8;
 
 export const useFollowBottom = (
-  ref: RefObject<HTMLElement | null>,
-  signal: ReadonlyArray<unknown>,
+  scroller: RefObject<HTMLElement | null>,
+  content: RefObject<HTMLElement | null>,
 ): void => {
-  const followed = useRef(false);
   useEffect(() => {
-    const node = ref.current;
-    if (node === null) return;
-    const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
-    if (followed.current && distance > FOLLOW_WITHIN_PX) return;
-    node.scrollTop = node.scrollHeight;
-    followed.current = true;
-  }, signal);
+    const node = scroller.current;
+    const inner = content.current;
+    if (node === null || inner === null) return;
+    const seen = MutableRef.make({ pinned: true, top: node.scrollTop, height: node.scrollHeight });
+
+    const onScroll = (): void => {
+      const { top, height } = MutableRef.get(seen);
+      const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight < AT_BOTTOM_PX;
+      const scrolledUp = node.scrollTop < top && node.scrollHeight >= height;
+      MutableRef.update(seen, (state) => ({
+        pinned: atBottom || (state.pinned && !scrolledUp),
+        top: node.scrollTop,
+        height: node.scrollHeight,
+      }));
+    };
+    const observer = new ResizeObserver(() => {
+      if (MutableRef.get(seen).pinned) node.scrollTop = node.scrollHeight;
+    });
+
+    observer.observe(inner);
+    node.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      node.removeEventListener("scroll", onScroll);
+    };
+  }, [scroller, content]);
 };
