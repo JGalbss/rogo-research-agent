@@ -1,3 +1,7 @@
+@import "./beautifui/foundation.css";
+@import "./beautifui/records-table.css";
+@import "./beautifui/sidebar-nav.css";
+
 :root {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #12181f;

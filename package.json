@@ -13,10 +13,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "effect": "4.0.0-rc.115",
     "express": "^5.2.1",
+    "glimm": "^0.3.1",
+    "iconoir-react": "^7.12.1",
+    "liveline": "^0.0.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwind-merge": "^3.7.0"
@@ -32,6 +36,7 @@
     "concurrently": "^10.0.5",
     "oxlint": "1.83.0",
     "react-doctor": "0.9.14",
+    "shadow-plugin": "^2.1.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
