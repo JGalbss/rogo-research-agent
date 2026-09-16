@@ -1,14 +1,6 @@
 import type { ReactElement } from "react";
 import { type Components, Streamdown } from "streamdown";
 
-const animated = {
-  animation: "blurIn",
-  duration: 420,
-  easing: "cubic-bezier(0.23, 1, 0.32, 1)",
-  sep: "word",
-  stagger: 14,
-} as const;
-
 const components: Components = {
   table: ({ children }) => (
     <div className="my-4 overflow-x-auto">
@@ -28,7 +20,6 @@ export function Prose({ text, streaming }: { text: string; streaming: boolean })
   return (
     <Streamdown
       mode={streaming ? "streaming" : "static"}
-      animated={streaming ? animated : false}
       controls={false}
       components={components}
       className="text-[14.5px] leading-[1.65] text-ink"

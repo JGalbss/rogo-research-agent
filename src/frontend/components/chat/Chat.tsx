@@ -22,7 +22,12 @@ export function Chat({
   const chat = chatFor(entry);
   const [resume] = useState(() => Option.isSome(entry.generation) && chat.status === "ready");
   const { messages, status, error } = useChat({ chat, resume });
-  const view = classifyChatView({ status, messageCount: messages.length, error });
+  const view = classifyChatView({
+    status,
+    messageCount: messages.length,
+    error,
+    stored: entry.createdAt.length > 0,
+  });
   const settled = acceptsInput(view);
   const scrollRef = useRef<HTMLDivElement>(null);
   const settledOnce = useRef(false);
@@ -37,6 +42,7 @@ export function Chat({
   const awaitingReply = Option.exists(Arr.last(messages), (message) => message.role === "user");
   const statusSlot = ChatView.$match(view, {
     Empty: () => null,
+    Loading: () => null,
     Idle: () => null,
     Streaming: () => (awaitingReply ? <LoadingState label="Researching" /> : null),
     Submitted: () => <LoadingState label="Researching" />,
