@@ -9,8 +9,6 @@ export default defineConfig({
     include: [
       "@ai-sdk/react",
       "@durable-streams/aisdk-transport",
-      "@durable-streams/state/db",
-      "@tanstack/react-db",
       "effect",
       "iconoir-react",
       "motion/react",

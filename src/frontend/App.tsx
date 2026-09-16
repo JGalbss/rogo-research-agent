@@ -1,4 +1,3 @@
-import { Array as Arr, Option } from "effect";
 import { SidebarExpand } from "iconoir-react";
 import { type ReactElement, useState } from "react";
 import { Chat } from "@/frontend/components/chat/Chat";
@@ -6,17 +5,13 @@ import PromptBar from "@/frontend/components/primitives/PromptBar";
 import SidebarNav from "@/frontend/components/primitives/SidebarNav";
 import { useSelectedChat } from "@/frontend/hooks/use-selected-chat";
 import { askChat } from "@/frontend/store/chat";
-import { emptyEntry, useChats } from "@/frontend/store/chats";
+import { useChats } from "@/frontend/store/chats";
 
 export function App(): ReactElement {
   const chats = useChats();
   const { selected, select, startNew } = useSelectedChat();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const entry = Option.getOrElse(
-    Arr.findFirst(chats, (chat) => chat.id === selected),
-    () => emptyEntry(selected),
-  );
   const recents = chats.map((chat) => ({ id: chat.id, label: chat.title }));
 
   return (
@@ -24,8 +19,8 @@ export function App(): ReactElement {
       <SidebarNav
         fill
         recents={recents}
-        activeTitle={entry.title}
-        activeId={entry.id}
+        activeTitle={null}
+        activeId={selected}
         onNewChat={startNew}
         onPick={select}
         collapsed={sidebarCollapsed}
@@ -42,7 +37,7 @@ export function App(): ReactElement {
             <SidebarExpand width={18} height={18} />
           </button>
         ) : null}
-        <Chat key={entry.id} entry={entry} onAsk={(text) => askChat(entry, text)} />
+        <Chat key={selected} id={selected} onAsk={(text) => askChat(selected, text)} />
         <div className="relative mx-auto w-full max-w-[740px] shrink-0 px-6 pt-3 pb-6">
           <div
             aria-hidden
@@ -52,7 +47,7 @@ export function App(): ReactElement {
           <PromptBar
             demo={false}
             placeholder="Ask a research question…"
-            onSend={(text) => askChat(entry, text)}
+            onSend={(text) => askChat(selected, text)}
           />
         </div>
       </main>

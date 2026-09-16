@@ -2,7 +2,6 @@ import { generateId } from "ai";
 import { Option, Schema } from "effect";
 import { parseAsString, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
-import { loadChat } from "@/frontend/store/snapshot";
 import { ChatId } from "@/shared/chat";
 
 const chatParam = parseAsString.withOptions({ history: "push" });
@@ -19,7 +18,6 @@ export const useSelectedChat = (): ChatSelection => {
   const selected = Option.getOrElse(Schema.decodeUnknownOption(ChatId)(param), () => fresh);
 
   useEffect(() => {
-    void loadChat(selected);
     if (param === null) void setParam(selected, { history: "replace" });
   }, [param, selected, setParam]);
 
