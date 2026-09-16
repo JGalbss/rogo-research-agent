@@ -29,6 +29,7 @@ export type ChatEvent = typeof ChatEvent.Type;
 
 export const ChatEventRecord = Schema.Struct({
   id: Schema.String,
+  at: Schema.String,
   event: ChatEvent,
 });
 export type ChatEventRecord = typeof ChatEventRecord.Type;

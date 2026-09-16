@@ -11,20 +11,22 @@ const dedupe = (messages: ReadonlyArray<ResearchUIMessage>): ResearchUIMessage[]
   Arr.dedupeWith(messages, (a, b) => a.id === b.id);
 
 export const chatFor = (entry: ChatEntry): Chat<ResearchUIMessage> =>
-  Option.match(MutableHashMap.get(chats, entry.id), {
-    onNone: () => {
-      const chat = new Chat<ResearchUIMessage>({
-        id: entry.id,
-        transport,
-        messages: dedupe(entry.messages),
-      });
-      MutableHashMap.set(chats, entry.id, chat);
-      return chat;
-    },
-    onSome: (chat) => {
-      if (chat.status !== "ready") return chat;
-      if (entry.messages.length <= chat.messages.length) return chat;
-      chat.messages = dedupe(entry.messages);
-      return chat;
-    },
+  Option.getOrElse(MutableHashMap.get(chats, entry.id), () => {
+    const chat = new Chat<ResearchUIMessage>({
+      id: entry.id,
+      transport,
+      messages: dedupe(entry.messages),
+    });
+    MutableHashMap.set(chats, entry.id, chat);
+    return chat;
   });
+
+const sameSequence = Arr.makeEquivalence<ResearchUIMessage>((a, b) => a.id === b.id);
+
+export const reseedChat = (chat: Chat<ResearchUIMessage>, entry: ChatEntry): void => {
+  if (chat.status !== "ready") return;
+  if (entry.messages.length < chat.messages.length) return;
+  const next = dedupe(entry.messages);
+  if (sameSequence(next, chat.messages)) return;
+  chat.messages = next;
+};

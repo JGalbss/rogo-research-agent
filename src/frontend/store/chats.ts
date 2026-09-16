@@ -42,6 +42,7 @@ const upsert = (chats: Chats, id: ChatId, change: (chat: ChatEntry) => ChatEntry
   );
 
 const byCreatedAt = Order.mapInput(Order.String, (chat: ChatEntry) => chat.createdAt);
+const byEventTime = Order.mapInput(Order.String, (record: ChatEventRecord) => record.at);
 
 export const deriveChats = (source: {
   readonly summaries: ReadonlyArray<ChatSummary>;
@@ -66,7 +67,7 @@ export const deriveChats = (source: {
       title: chatTitle(snapshot.messages),
     })),
   );
-  const fromEvents = Arr.reduce(source.events, fromSnapshots, (chats, { event }) =>
+  const fromEvents = Arr.reduce(Arr.sort(source.events, byEventTime), fromSnapshots, (chats, { event }) =>
     Match.value(event).pipe(
       Match.tag("ChatCreated", ({ id, createdAt }) =>
         upsert(chats, id, (chat) => ({ ...chat, createdAt })),

@@ -3,7 +3,7 @@ import { Array as Arr, Option } from "effect";
 import { AnimatePresence, motion } from "motion/react";
 import { type ReactElement, useRef, useState } from "react";
 import { useFollowBottom } from "@/frontend/hooks/use-follow-bottom";
-import { chatFor } from "@/frontend/store/chat";
+import { useChatInstance } from "@/frontend/hooks/use-chat-instance";
 import type { ChatEntry } from "@/frontend/store/chats";
 import { classifyChatView, viewTraits } from "./chat-view.tsx";
 import { ExamplePrompts } from "./ExamplePrompts.tsx";
@@ -18,7 +18,8 @@ export function Chat({
   entry: ChatEntry;
   onAsk: (text: string) => void;
 }): ReactElement {
-  const chat = chatFor(entry);
+  const chat = useChatInstance(entry);
+
   const [resume] = useState(
     () => Option.isSome(entry.generation) && chat.status === "ready",
   );
@@ -32,6 +33,7 @@ export function Chat({
       stored: entry.createdAt.length > 0,
     }),
   );
+
   const scrollRef = useRef<HTMLDivElement>(null);
   useFollowBottom(scrollRef, [messages, status]);
 
@@ -63,7 +65,11 @@ export function Chat({
           <MessageBubble
             key={message.id}
             message={message}
-            turn={traits.liveTurn && index === messages.length - 1 ? "live" : "settled"}
+            turn={
+              traits.liveTurn && index === messages.length - 1
+                ? "live"
+                : "settled"
+            }
           />
         ))}
         <div className="min-h-8">{traits.indicator}</div>
