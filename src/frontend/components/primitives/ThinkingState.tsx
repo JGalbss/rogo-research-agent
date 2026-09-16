@@ -149,7 +149,7 @@ export default function ThinkingState({
       key={variant}
       className="flex w-full max-w-95 flex-col"
       style={{
-        minHeight: working || expanded ? 176 : undefined,
+        minHeight: !driven && (working || expanded) ? 176 : undefined,
         transition: "min-height 400ms cubic-bezier(0.23,1,0.32,1)",
       }}
     >

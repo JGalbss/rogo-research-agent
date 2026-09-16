@@ -5,6 +5,18 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: [
+      "@ai-sdk/react",
+      "@durable-streams/aisdk-transport",
+      "@durable-streams/state/db",
+      "@tanstack/react-db",
+      "effect",
+      "iconoir-react",
+      "motion/react",
+      "streamdown",
+    ],
+  },
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
