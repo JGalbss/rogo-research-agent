@@ -154,7 +154,7 @@ export default function ThinkingState({
   return (
     <div
       key={variant}
-      className="flex w-full max-w-95 flex-col"
+      className={driven ? "flex w-full flex-col" : "flex w-full max-w-95 flex-col"}
       style={{
         minHeight: !driven && (working || expanded) ? 176 : undefined,
         transition: "min-height 400ms cubic-bezier(0.23,1,0.32,1)",
