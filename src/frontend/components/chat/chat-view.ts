@@ -32,12 +32,3 @@ export const classifyChatView = (input: {
     Match.orElse(() => ChatView.Idle()),
   );
 
-export const acceptsInput = ChatView.$match({
-  Empty: () => true,
-  Loading: () => false,
-  Idle: () => true,
-  Failed: () => true,
-  Submitted: () => false,
-  Awaiting: () => false,
-  Streaming: () => false,
-});

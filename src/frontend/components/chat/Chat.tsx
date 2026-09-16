@@ -6,7 +6,7 @@ import ThinkingState from "@/frontend/components/primitives/ThinkingState";
 import { useFollowBottom } from "@/frontend/hooks/use-follow-bottom";
 import { chatFor } from "@/frontend/store/chat";
 import type { ChatEntry } from "@/frontend/store/chats";
-import { ChatView, acceptsInput, classifyChatView } from "./chat-view.ts";
+import { ChatView, classifyChatView } from "./chat-view.ts";
 import { ExamplePrompts } from "./ExamplePrompts.tsx";
 import { MessageBubble } from "./MessageBubble.tsx";
 
@@ -20,7 +20,9 @@ export function Chat({
   onAsk: (text: string) => void;
 }): ReactElement {
   const chat = chatFor(entry);
-  const [resume] = useState(() => Option.isSome(entry.generation) && chat.status === "ready");
+  const [resume] = useState(
+    () => Option.isSome(entry.generation) && chat.status === "ready",
+  );
   const { messages, status, error } = useChat({ chat, resume });
   const view = classifyChatView({
     status,
@@ -29,7 +31,16 @@ export function Chat({
     error,
     stored: entry.createdAt.length > 0,
   });
-  const settled = acceptsInput(view);
+
+  const liveTurn = ChatView.$match(view, {
+    Empty: () => false,
+    Loading: () => false,
+    Idle: () => false,
+    Failed: () => false,
+    Submitted: () => true,
+    Awaiting: () => true,
+    Streaming: () => true,
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   useFollowBottom(scrollRef, [messages, status]);
 
@@ -38,8 +49,12 @@ export function Chat({
     Loading: () => null,
     Idle: () => null,
     Streaming: () => null,
-    Submitted: () => <ThinkingState variant="Coding" rows={[]} active="Thinking" working />,
-    Awaiting: () => <ThinkingState variant="Coding" rows={[]} active="Thinking" working />,
+    Submitted: () => (
+      <ThinkingState variant="Coding" rows={[]} active="Thinking" working />
+    ),
+    Awaiting: () => (
+      <ThinkingState variant="Coding" rows={[]} active="Thinking" working />
+    ),
     Failed: ({ message }) => (
       <p className="text-[13px] text-red">Something went wrong: {message}</p>
     ),
@@ -69,8 +84,12 @@ export function Chat({
       </AnimatePresence>
 
       <div className="mx-auto flex w-full max-w-[740px] flex-col gap-6 px-6 pt-10 pb-4">
-        {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} settled={settled} />
+        {messages.map((message, index) => (
+          <MessageBubble
+            key={message.id}
+            message={message}
+            turn={liveTurn && index === messages.length - 1 ? "live" : "settled"}
+          />
         ))}
         <div className="min-h-8">{statusSlot}</div>
       </div>

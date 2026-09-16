@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
 import { useLiveTrace } from "@/frontend/hooks/use-live-trace";
 import type { ResearchUIMessage } from "@/shared/chat";
-import { Reply, classifyReply } from "./message-parts.ts";
 import { Prose } from "./Prose.tsx";
+import { Reply, type TurnPhase, classifyReply } from "./reply.ts";
 import { TraceView } from "./TraceView.tsx";
 
 const OUT_OF_STEPS_ANSWER =
@@ -17,16 +17,15 @@ const answer = Reply.$match({
 
 export function AssistantReply({
   message,
-  settled,
+  turn,
 }: {
   message: ResearchUIMessage;
-  settled: boolean;
+  turn: TurnPhase;
 }): ReactElement {
-  const reply = classifyReply(message, settled ? "settled" : "open");
-  const rows = useLiveTrace(reply);
+  const reply = classifyReply(message, turn);
   return (
     <div className="flex w-full flex-col gap-3">
-      <TraceView rows={rows} working={Reply.$is("Working")(reply)} settled={settled} />
+      <TraceView rows={useLiveTrace(reply)} reply={reply} turn={turn} />
       {answer(reply)}
     </div>
   );

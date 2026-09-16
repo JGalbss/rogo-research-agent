@@ -1,17 +1,19 @@
 import type { ReactElement } from "react";
 import ThinkingState from "@/frontend/components/primitives/ThinkingState";
-import { type TraceRow, traceHeadline, traceSubjects, traceSummary } from "./message-parts.ts";
+import { Reply, type TurnPhase } from "./reply.ts";
 import { SourcePills } from "./SourcePills.tsx";
+import { type TraceRow, traceHeadline, traceSubjects, traceSummary } from "./trace.ts";
 
 export function TraceView({
   rows,
-  working,
-  settled,
+  reply,
+  turn,
 }: {
   rows: TraceRow[];
-  working: boolean;
-  settled: boolean;
+  reply: Reply;
+  turn: TurnPhase;
 }): ReactElement | null {
+  const working = Reply.$is("Working")(reply);
   if (rows.length === 0 && !working) return null;
   return (
     <ThinkingState
@@ -20,7 +22,7 @@ export function TraceView({
       active={traceHeadline(rows)}
       done={traceSummary(rows)}
       working={working}
-      settled={settled}
+      settled={turn === "settled"}
       trailing={<SourcePills subjects={traceSubjects(rows)} />}
     />
   );
