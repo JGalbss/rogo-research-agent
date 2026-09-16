@@ -14,9 +14,7 @@ import GlideMenu from "@/frontend/components/primitives/GlideMenu";
 
 const WORKSPACE = { key: "rogo", name: "Rogo Research", monogram: "R" };
 
-const NAV_ITEMS: { key: string; label: string; icon: ReactNode; count?: string }[] = [
-  { key: "home", label: "Home", icon: <Home width={18} height={18} /> },
-];
+const NAV_ITEMS: { key: string; label: string; icon: ReactNode; count?: string }[] = [];
 
 export type SidebarRecent = {
   id: string;
@@ -195,7 +193,7 @@ export default function SidebarNav({
   onPick,
   activeNav,
   onNavigate,
-  footerLabel = "Upgrade",
+  footerLabel,
   footerIcon,
   onFooterClick,
   recents = DEFAULT_RECENTS,
@@ -402,6 +400,7 @@ export default function SidebarNav({
           </GlideGroup>
         </div>
 
+        {footerLabel === undefined ? null : (
         <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
           <button
             type="button"
@@ -412,6 +411,7 @@ export default function SidebarNav({
             {footerLabel}
           </button>
         </div>
+        )}
       </div>
     </aside>
   );

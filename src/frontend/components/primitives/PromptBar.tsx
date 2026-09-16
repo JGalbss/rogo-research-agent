@@ -97,8 +97,8 @@ const COMMANDS = [
 ];
 
 const MODELS = [
-  { key: "claude-sonnet-5", name: "Claude Sonnet 5", tag: "Default" },
-  { key: "claude-opus-5", name: "Claude Opus 5", tag: "Deep" },
+  { key: "claude-sonnet-5", name: "Claude Sonnet 5", tag: "Default", description: "Fast research and light deliverables" },
+  { key: "claude-opus-5", name: "Claude Opus 5", tag: "Deep", description: "Most capable for full deliverables" },
 ];
 
 const FILES = ["flavor-chart.png", "summer-menu.pdf", "pos-export.csv"];
@@ -486,7 +486,7 @@ export default function PromptBar({
       {modelOpen && (
         <div
           onMouseLeave={() => setModelHovered(null)}
-          className="absolute z-10 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
+          className="absolute z-10 w-72 rounded-[12px] bg-surface p-1 shadow-raised"
           style={{ left: modelMenuLeft, bottom: modelMenuBottom, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
         >
           {/* single gliding highlight — floats to the hovered / selected row */}
@@ -514,11 +514,15 @@ export default function PromptBar({
                 selectModel(m);
                 inputRef.current?.focus();
               }}
-              className="relative z-10 flex h-7.5 w-full items-center gap-2 rounded-[6px] px-2 text-left"
+              className="relative z-10 flex w-full items-start gap-2 rounded-[8px] px-2.5 py-2 text-left"
             >
-              <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">{m.name}</span>
-              <span className="shrink-0 text-[11px] text-ink-3">{m.tag}</span>
-              <span className={`shrink-0 text-ink ${m.key === model.key ? "" : "invisible"}`}>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="truncate text-[13px] font-medium text-ink">
+                  {m.name} <span className="font-normal text-ink-2">{m.tag}</span>
+                </span>
+                <span className="truncate text-[12px] text-ink-3">{m.description}</span>
+              </span>
+              <span className={`mt-0.5 shrink-0 text-ink ${m.key === model.key ? "" : "invisible"}`}>
                 <Icon size={13} strokeWidth={2.5}><path d="M20 6L9 17l-5-5" /></Icon>
               </span>
             </button>

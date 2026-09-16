@@ -22,7 +22,6 @@ export function App(): ReactElement {
         fill
         recents={recents}
         activeTitle={entry.title}
-        footerLabel="Rogo Research"
         onNewChat={() => setSelected(generateId())}
         onPick={(id) => setSelected(id)}
       />
